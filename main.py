@@ -258,6 +258,8 @@ async def add_property_to_class(subject, property, object_class):
 @app.post("/object_property/rename/")
 async def object_property_rename(object_property_name, new_object_property_name):
     all_info = await get_full_info(object_property_name, 'owl:ObjectProperty')
+    if not all_info:
+        return JSONResponse(content="Such property doen't exist.", status_code=status.HTTP_400_BAD_REQUEST)
     metainfo = {
         'type': 'rdf:type',
         'range': 'rdfs:range',
@@ -277,6 +279,95 @@ async def object_property_rename(object_property_name, new_object_property_name)
                                           metainfo[f'{i["relation"].split("#")[1][:-1]}'],
                                           f'<{i["object"].split("/")[-1][:-1]}>')
             database.execute_post_query(f'<{new_object_property_name}>',
+                                        metainfo[f'{i["relation"].split("#")[1][:-1]}'],
+                                        f'<{i["object"].split("/")[-1][:-1]}>')
+
+    return JSONResponse(status_code=status.HTTP_201_CREATED, content={})
+
+
+@app.post("/class/rename/")
+async def class_rename(object_property_name, new_object_property_name):
+    all_info = await get_full_info(object_property_name, 'owl:ObjectProperty')
+    metainfo = {
+        'type': 'rdf:type',
+        'range': 'rdfs:range',
+        'domain': 'rdfs:domain',
+        'ObjectProperty': 'owl:ObjectProperty',
+    }
+    for i in all_info:
+        if i["relation"].split("#")[1][:-1] == 'type':
+            database.execute_delete_query(f'<{i["subject"].split("/")[-1][:-1]}>',
+                                          metainfo[f'{i["relation"].split("#")[1][:-1]}'],
+                                          metainfo[f'{i["object"].split("#")[1][:-1]}'])
+            database.execute_post_query(f'<{new_object_property_name}>',
+                                        metainfo[f'{i["relation"].split("#")[1][:-1]}'],
+                                        metainfo[f'{i["object"].split("#")[1][:-1]}'])
+        else:
+            database.execute_delete_query(f'<{i["subject"].split("/")[-1][:-1]}>',
+                                          metainfo[f'{i["relation"].split("#")[1][:-1]}'],
+                                          f'<{i["object"].split("/")[-1][:-1]}>')
+            database.execute_post_query(f'<{new_object_property_name}>',
+                                        metainfo[f'{i["relation"].split("#")[1][:-1]}'],
+                                        f'<{i["object"].split("/")[-1][:-1]}>')
+
+    return JSONResponse(status_code=status.HTTP_201_CREATED, content={})
+
+
+@app.post("/instance/rename/")
+async def instance_rename(object_property_name, new_object_property_name):
+    all_info = await get_full_info(object_property_name, 'owl:ObjectProperty')
+    metainfo = {
+        'type': 'rdf:type',
+        'range': 'rdfs:range',
+        'domain': 'rdfs:domain',
+        'ObjectProperty': 'owl:ObjectProperty'
+    }
+    for i in all_info:
+        if i["relation"].split("#")[1][:-1] == 'type':
+            database.execute_delete_query(f'<{i["subject"].split("/")[-1][:-1]}>',
+                                          metainfo[f'{i["relation"].split("#")[1][:-1]}'],
+                                          metainfo[f'{i["object"].split("#")[1][:-1]}'])
+            database.execute_post_query(f'<{new_object_property_name}>',
+                                        metainfo[f'{i["relation"].split("#")[1][:-1]}'],
+                                        metainfo[f'{i["object"].split("#")[1][:-1]}'])
+        else:
+            database.execute_delete_query(f'<{i["subject"].split("/")[-1][:-1]}>',
+                                          metainfo[f'{i["relation"].split("#")[1][:-1]}'],
+                                          f'<{i["object"].split("/")[-1][:-1]}>')
+            database.execute_post_query(f'<{new_object_property_name}>',
+                                        metainfo[f'{i["relation"].split("#")[1][:-1]}'],
+                                        f'<{i["object"].split("/")[-1][:-1]}>')
+
+    return JSONResponse(status_code=status.HTTP_201_CREATED, content={})
+
+
+@app.post("/data_property/rename/")
+async def data_property_rename(data_property_name, new_data_property_name):
+    all_info = await get_full_info(data_property_name, 'owl:DatatypeProperty')
+    if not all_info:
+        return JSONResponse(content="Such property doen't exist.", status_code=status.HTTP_400_BAD_REQUEST)
+    metainfo = {
+        'type': 'rdf:type',
+        'range': 'rdfs:range',
+        'domain': 'rdfs:domain',
+        'DatatypeProperty': 'owl:DatatypeProperty',
+        'decimal': 'xsd:decimal',
+        'int': 'xsd:int',
+        'string': 'xsd:string'
+    }
+    for i in all_info:
+        if i["relation"].split("#")[1][:-1] == 'type' or i["relation"].split("#")[1][:-1] == 'range':
+            database.execute_delete_query(f'<{i["subject"].split("/")[-1][:-1]}>',
+                                          metainfo[f'{i["relation"].split("#")[1][:-1]}'],
+                                          metainfo[f'{i["object"].split("#")[1][:-1]}'])
+            database.execute_post_query(f'<{new_data_property_name}>',
+                                        metainfo[f'{i["relation"].split("#")[1][:-1]}'],
+                                        metainfo[f'{i["object"].split("#")[1][:-1]}'])
+        else:
+            database.execute_delete_query(f'<{i["subject"].split("/")[-1][:-1]}>',
+                                          metainfo[f'{i["relation"].split("#")[1][:-1]}'],
+                                          f'<{i["object"].split("/")[-1][:-1]}>')
+            database.execute_post_query(f'<{new_data_property_name}>',
                                         metainfo[f'{i["relation"].split("#")[1][:-1]}'],
                                         f'<{i["object"].split("/")[-1][:-1]}>')
 
