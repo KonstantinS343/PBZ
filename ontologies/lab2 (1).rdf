@@ -1,0 +1,449 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns="http://127.0.0.1:10035/repositories/PBZ/"
+     xml:base="http://127.0.0.1:10035/repositories/PBZ/"
+     xmlns:owl="http://www.w3.org/2002/07/owl#"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:xml="http://www.w3.org/XML/1998/namespace"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+     xmlns:untitled-ontology-2="http://127.0.0.1:10035/repositories/PBZ/">
+    <owl:Ontology rdf:about="http://127.0.0.1:10035/repositories/PBZ/"/>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Object Properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/динозавры_как_пища -->
+
+    <owl:ObjectProperty rdf:about="http://127.0.0.1:10035/repositories/PBZ/динозавры_как_пища">
+        <rdfs:domain rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Динозавры"/>
+        <rdfs:range rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Динозавры"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/спаривание -->
+
+    <owl:ObjectProperty rdf:about="http://127.0.0.1:10035/repositories/PBZ/спаривание">
+        <rdfs:domain rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Динозавры"/>
+        <rdfs:range rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Динозавры"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Data properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/вес -->
+
+    <owl:DatatypeProperty rdf:about="http://127.0.0.1:10035/repositories/PBZ/вес">
+        <rdfs:domain rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Динозавры"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/возраст -->
+
+    <owl:DatatypeProperty rdf:about="http://127.0.0.1:10035/repositories/PBZ/возраст">
+        <rdfs:domain rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Динозавры"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/высота -->
+
+    <owl:DatatypeProperty rdf:about="http://127.0.0.1:10035/repositories/PBZ/высота">
+        <rdfs:domain rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Динозавры"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Classes
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Аллозавр -->
+
+    <owl:Class rdf:about="http://127.0.0.1:10035/repositories/PBZ/Аллозавр">
+        <rdfs:subClassOf rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Хищники"/>
+    </owl:Class>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Брахиозавр -->
+
+    <owl:Class rdf:about="http://127.0.0.1:10035/repositories/PBZ/Брахиозавр">
+        <rdfs:subClassOf rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Травоядные"/>
+    </owl:Class>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Велоцираптор -->
+
+    <owl:Class rdf:about="http://127.0.0.1:10035/repositories/PBZ/Велоцираптор">
+        <rdfs:subClassOf rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Хищники"/>
+    </owl:Class>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Всеядные -->
+
+    <owl:Class rdf:about="http://127.0.0.1:10035/repositories/PBZ/Всеядные">
+        <rdfs:subClassOf rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Динозавры"/>
+    </owl:Class>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Галлимим -->
+
+    <owl:Class rdf:about="http://127.0.0.1:10035/repositories/PBZ/Галлимим">
+        <rdfs:subClassOf rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Всеядные"/>
+    </owl:Class>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Дилофозавр -->
+
+    <owl:Class rdf:about="http://127.0.0.1:10035/repositories/PBZ/Дилофозавр">
+        <rdfs:subClassOf rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Хищники"/>
+    </owl:Class>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Динозавры -->
+
+    <owl:Class rdf:about="http://127.0.0.1:10035/repositories/PBZ/Динозавры"/>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Диплодок -->
+
+    <owl:Class rdf:about="http://127.0.0.1:10035/repositories/PBZ/Диплодок">
+        <rdfs:subClassOf rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Травоядные"/>
+    </owl:Class>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Игуанодон -->
+
+    <owl:Class rdf:about="http://127.0.0.1:10035/repositories/PBZ/Игуанодон">
+        <rdfs:subClassOf rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Травоядные"/>
+    </owl:Class>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Спинозавр -->
+
+    <owl:Class rdf:about="http://127.0.0.1:10035/repositories/PBZ/Спинозавр">
+        <rdfs:subClassOf rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Травоядные"/>
+    </owl:Class>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Тираннозавр -->
+
+    <owl:Class rdf:about="http://127.0.0.1:10035/repositories/PBZ/Тираннозавр">
+        <rdfs:subClassOf rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Хищники"/>
+    </owl:Class>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Травоядные -->
+
+    <owl:Class rdf:about="http://127.0.0.1:10035/repositories/PBZ/Травоядные">
+        <rdfs:subClassOf rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Динозавры"/>
+    </owl:Class>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Трицератопс -->
+
+    <owl:Class rdf:about="http://127.0.0.1:10035/repositories/PBZ/Трицератопс">
+        <rdfs:subClassOf rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Травоядные"/>
+    </owl:Class>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Хищники -->
+
+    <owl:Class rdf:about="http://127.0.0.1:10035/repositories/PBZ/Хищники">
+        <rdfs:subClassOf rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Динозавры"/>
+    </owl:Class>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Individuals
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Антон -->
+
+    <owl:NamedIndividual rdf:about="http://127.0.0.1:10035/repositories/PBZ/Антон">
+        <rdf:type rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Дилофозавр"/>
+        <untitled-ontology-2:динозавры_как_пища rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Дионис"/>
+        <untitled-ontology-2:динозавры_как_пища rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Евлампий"/>
+        <untitled-ontology-2:вес rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.4</untitled-ontology-2:вес>
+        <untitled-ontology-2:возраст rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">10</untitled-ontology-2:возраст>
+        <untitled-ontology-2:высота rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">3.32</untitled-ontology-2:высота>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Аристарх -->
+
+    <owl:NamedIndividual rdf:about="http://127.0.0.1:10035/repositories/PBZ/Аристарх">
+        <rdf:type rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Диплодок"/>
+        <untitled-ontology-2:вес rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">12.6</untitled-ontology-2:вес>
+        <untitled-ontology-2:вес rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">14.2</untitled-ontology-2:вес>
+        <untitled-ontology-2:высота rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">6.2</untitled-ontology-2:высота>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Боря -->
+
+    <owl:NamedIndividual rdf:about="http://127.0.0.1:10035/repositories/PBZ/Боря">
+        <rdf:type rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Аллозавр"/>
+        <untitled-ontology-2:вес rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">3.12</untitled-ontology-2:вес>
+        <untitled-ontology-2:возраст rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">13</untitled-ontology-2:возраст>
+        <untitled-ontology-2:высота rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">6.72</untitled-ontology-2:высота>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Влад -->
+
+    <owl:NamedIndividual rdf:about="http://127.0.0.1:10035/repositories/PBZ/Влад">
+        <rdf:type rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Велоцираптор"/>
+        <untitled-ontology-2:динозавры_как_пища rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Евлампий"/>
+        <untitled-ontology-2:вес rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.12</untitled-ontology-2:вес>
+        <untitled-ontology-2:возраст rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">4</untitled-ontology-2:возраст>
+        <untitled-ontology-2:высота rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.4</untitled-ontology-2:высота>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Гелиодор -->
+
+    <owl:NamedIndividual rdf:about="http://127.0.0.1:10035/repositories/PBZ/Гелиодор">
+        <rdf:type rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Трицератопс"/>
+        <untitled-ontology-2:вес rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">6.1</untitled-ontology-2:вес>
+        <untitled-ontology-2:возраст rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">4.8</untitled-ontology-2:возраст>
+        <untitled-ontology-2:высота rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">2.3</untitled-ontology-2:высота>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Герадот -->
+
+    <owl:NamedIndividual rdf:about="http://127.0.0.1:10035/repositories/PBZ/Герадот">
+        <rdf:type rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Тираннозавр"/>
+        <untitled-ontology-2:вес rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">6.4</untitled-ontology-2:вес>
+        <untitled-ontology-2:возраст rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">12.5</untitled-ontology-2:возраст>
+        <untitled-ontology-2:высота rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">5.3</untitled-ontology-2:высота>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Дионис -->
+
+    <owl:NamedIndividual rdf:about="http://127.0.0.1:10035/repositories/PBZ/Дионис">
+        <rdf:type rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Спинозавр"/>
+        <untitled-ontology-2:вес rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">10.2</untitled-ontology-2:вес>
+        <untitled-ontology-2:возраст rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">4.5</untitled-ontology-2:возраст>
+        <untitled-ontology-2:высота rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">6.6</untitled-ontology-2:высота>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Евлампий -->
+
+    <owl:NamedIndividual rdf:about="http://127.0.0.1:10035/repositories/PBZ/Евлампий">
+        <rdf:type rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Галлимим"/>
+        <untitled-ontology-2:динозавры_как_пища rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Герадот"/>
+        <untitled-ontology-2:динозавры_как_пища rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Жанна"/>
+        <untitled-ontology-2:спаривание rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Забава"/>
+        <untitled-ontology-2:вес rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.189</untitled-ontology-2:вес>
+        <untitled-ontology-2:возраст rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">16</untitled-ontology-2:возраст>
+        <untitled-ontology-2:высота rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.45</untitled-ontology-2:высота>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Елизар -->
+
+    <owl:NamedIndividual rdf:about="http://127.0.0.1:10035/repositories/PBZ/Елизар">
+        <rdf:type rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Спинозавр"/>
+        <untitled-ontology-2:вес rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">12.3</untitled-ontology-2:вес>
+        <untitled-ontology-2:возраст rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">5.6</untitled-ontology-2:возраст>
+        <untitled-ontology-2:высота rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">6.3</untitled-ontology-2:высота>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Жанна -->
+
+    <owl:NamedIndividual rdf:about="http://127.0.0.1:10035/repositories/PBZ/Жанна">
+        <rdf:type rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Игуанодон"/>
+        <untitled-ontology-2:вес rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">4.23</untitled-ontology-2:вес>
+        <untitled-ontology-2:возраст rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">9.2</untitled-ontology-2:возраст>
+        <untitled-ontology-2:высота rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">2.6</untitled-ontology-2:высота>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Забава -->
+
+    <owl:NamedIndividual rdf:about="http://127.0.0.1:10035/repositories/PBZ/Забава">
+        <rdf:type rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Галлимим"/>
+        <untitled-ontology-2:динозавры_как_пища rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Влад"/>
+        <untitled-ontology-2:спаривание rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Евлампий"/>
+        <untitled-ontology-2:вес rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.211</untitled-ontology-2:вес>
+        <untitled-ontology-2:возраст rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">13</untitled-ontology-2:возраст>
+        <untitled-ontology-2:высота rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.92</untitled-ontology-2:высота>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Кристина -->
+
+    <owl:NamedIndividual rdf:about="http://127.0.0.1:10035/repositories/PBZ/Кристина">
+        <rdf:type rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Велоцираптор"/>
+        <untitled-ontology-2:динозавры_как_пища rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Елизар"/>
+        <untitled-ontology-2:динозавры_как_пища rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Фаина"/>
+        <untitled-ontology-2:вес rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.23</untitled-ontology-2:вес>
+        <untitled-ontology-2:возраст rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">7.2</untitled-ontology-2:возраст>
+        <untitled-ontology-2:высота rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.56</untitled-ontology-2:высота>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Лаврентий -->
+
+    <owl:NamedIndividual rdf:about="http://127.0.0.1:10035/repositories/PBZ/Лаврентий">
+        <rdf:type rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Трицератопс"/>
+        <untitled-ontology-2:вес rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">7.9</untitled-ontology-2:вес>
+        <untitled-ontology-2:возраст rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">2.5</untitled-ontology-2:возраст>
+        <untitled-ontology-2:высота rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.5</untitled-ontology-2:высота>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Любава -->
+
+    <owl:NamedIndividual rdf:about="http://127.0.0.1:10035/repositories/PBZ/Любава">
+        <rdf:type rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Брахиозавр"/>
+        <untitled-ontology-2:спаривание rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Персей"/>
+        <untitled-ontology-2:вес rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">34.345</untitled-ontology-2:вес>
+        <untitled-ontology-2:возраст rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">24</untitled-ontology-2:возраст>
+        <untitled-ontology-2:высота rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">12.4</untitled-ontology-2:высота>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Мирон -->
+
+    <owl:NamedIndividual rdf:about="http://127.0.0.1:10035/repositories/PBZ/Мирон">
+        <rdf:type rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Диплодок"/>
+        <untitled-ontology-2:вес rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">15.12</untitled-ontology-2:вес>
+        <untitled-ontology-2:возраст rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">14.5</untitled-ontology-2:возраст>
+        <untitled-ontology-2:высота rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">8.76</untitled-ontology-2:высота>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Назар -->
+
+    <owl:NamedIndividual rdf:about="http://127.0.0.1:10035/repositories/PBZ/Назар">
+        <rdf:type rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Тираннозавр"/>
+        <untitled-ontology-2:динозавры_как_пища rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Гелиодор"/>
+        <untitled-ontology-2:динозавры_как_пища rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Любава"/>
+        <untitled-ontology-2:вес rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">7.23</untitled-ontology-2:вес>
+        <untitled-ontology-2:возраст rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">18.1</untitled-ontology-2:возраст>
+        <untitled-ontology-2:высота rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">6.6</untitled-ontology-2:высота>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Оксана -->
+
+    <owl:NamedIndividual rdf:about="http://127.0.0.1:10035/repositories/PBZ/Оксана">
+        <rdf:type rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Аллозавр"/>
+        <untitled-ontology-2:динозавры_как_пища rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Евлампий"/>
+        <untitled-ontology-2:вес rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">2.34</untitled-ontology-2:вес>
+        <untitled-ontology-2:возраст rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">17</untitled-ontology-2:возраст>
+        <untitled-ontology-2:высота rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">5.7</untitled-ontology-2:высота>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Персей -->
+
+    <owl:NamedIndividual rdf:about="http://127.0.0.1:10035/repositories/PBZ/Персей">
+        <rdf:type rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Брахиозавр"/>
+        <untitled-ontology-2:вес rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">43.2</untitled-ontology-2:вес>
+        <untitled-ontology-2:возраст rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">12.4</untitled-ontology-2:возраст>
+        <untitled-ontology-2:высота rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">13.53</untitled-ontology-2:высота>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Фаина -->
+
+    <owl:NamedIndividual rdf:about="http://127.0.0.1:10035/repositories/PBZ/Фаина">
+        <rdf:type rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Игуанодон"/>
+        <untitled-ontology-2:вес rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">5.2</untitled-ontology-2:вес>
+        <untitled-ontology-2:возраст rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">16.3</untitled-ontology-2:возраст>
+        <untitled-ontology-2:высота rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.90</untitled-ontology-2:высота>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://127.0.0.1:10035/repositories/PBZ/Шакира -->
+
+    <owl:NamedIndividual rdf:about="http://127.0.0.1:10035/repositories/PBZ/Шакира">
+        <rdf:type rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Дилофозавр"/>
+        <untitled-ontology-2:вес rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.324</untitled-ontology-2:вес>
+        <untitled-ontology-2:возраст rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">4</untitled-ontology-2:возраст>
+        <untitled-ontology-2:высота rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.89</untitled-ontology-2:высота>
+    </owl:NamedIndividual>
+</rdf:RDF>
+
+
+
+<!-- Generated by the OWL API (version 4.5.26.2023-07-17T20:34:13Z) https://github.com/owlcs/owlapi -->
+
