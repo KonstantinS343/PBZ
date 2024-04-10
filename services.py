@@ -1,5 +1,4 @@
 import database
-import asyncio
 
 from typing import Dict
 
@@ -26,7 +25,6 @@ async def validate_input(args: Dict[str, str]):
         for i in objects:
             if i['subject'].split('/')[-1][:-1] == name:
                 output[type_class] = True
-    print(output)
     return (True if all(output.values()) else False, output)
 
 
@@ -36,8 +34,4 @@ async def get_full_info(name: str, type: str):
     for i in query:
         if i["subject"].split("/")[-1][:-1] == name:
             all_info.append(i)
-    print(*all_info, sep='\n')
     return all_info
-
-
-asyncio.run(get_full_info('Антон', 'owl:NamedIndividual'))

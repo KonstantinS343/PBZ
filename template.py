@@ -13,6 +13,12 @@ class_template = {
 }
 
 
+instance_template = {
+    "type": "rdf:type",
+    "NamedIndividual": "owl:NamedIndividual",
+}
+
+
 data_property_template = {
     "type": "rdf:type",
     "range": "rdfs:range",
