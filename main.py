@@ -1,6 +1,6 @@
 import uvicorn
 from fastapi import FastAPI, UploadFile, File, Query
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from starlette import status
 from typing import Annotated
 
@@ -107,9 +107,18 @@ async def get_object_property():
     query_result = database.execute_get_query(
         relation="rdf:type", object="owl:ObjectProperty"
     )
-
     for item in query_result:
-        content.append(item["subject"].split("/")[-1][:-1])
+        dict_item = {}
+        for i in database.execute_get_query():
+            if i["subject"].split("/")[-1][:-1] == item["subject"].split("/")[-1][:-1]:
+                if i["relation"].split("#")[1][:-1] == 'type':
+                    dict_item['property'] = item["subject"].split("/")[-1][:-1]
+                elif i["relation"].split("#")[1][:-1] == 'domain':
+                    dict_item['domain'] = i["object"].split("/")[-1][:-1]
+                else:
+                    dict_item['range'] = i["object"].split("/")[-1][:-1]
+        content.append(dict_item.copy())
+        dict_item.clear()
 
     return JSONResponse(status_code=status.HTTP_200_OK, content=content)
 
@@ -123,7 +132,17 @@ async def get_data_properties():
         relation="rdf:type", object="owl:DatatypeProperty"
     )
     for item in query_result:
-        content.append(item["subject"].split("/")[-1][:-1])
+        dict_item = {}
+        for i in database.execute_get_query():
+            if i["subject"].split("/")[-1][:-1] == item["subject"].split("/")[-1][:-1]:
+                if i["relation"].split("#")[1][:-1] == 'type':
+                    dict_item['property'] = item["subject"].split("/")[-1][:-1]
+                elif i["relation"].split("#")[1][:-1] == 'domain':
+                    dict_item['domain'] = i["object"].split("/")[-1][:-1]
+                else:
+                    dict_item['range'] = 'xsd:' + i["object"].split("#")[1][:-1]
+        content.append(dict_item.copy())
+        dict_item.clear()
 
     return JSONResponse(status_code=status.HTTP_200_OK, content=content)
 
@@ -147,7 +166,7 @@ async def create_data_property(
         'DatatypeProperty': data_property,
         'Class': domain
     })
-    if not validation[0]:
+    if not validation[1]['Class']:
         return JSONResponse(
             content="Check input args", status_code=status.HTTP_400_BAD_REQUEST
         )
@@ -224,7 +243,7 @@ async def create_subclass(
     if not child_class:
         database.execute_post_query(f"<{classname}>", "rdf:type", "owl:Class")
     else:
-        database.execute_delete_query()
+        await delete_class(child_class)
         database.execute_post_query(f"<{classname}>", "rdf:type", "owl:Class")
     if database.execute_post_query(f"<{classname}>", "rdfs:subClassOf", f"<{parent}>"):
         return JSONResponse(status_code=status.HTTP_201_CREATED, content={})
@@ -273,7 +292,7 @@ async def create_instance(
 
 @app.post("/property/connect/")
 async def add_property_to_instance(
-    value_type: str,
+    value_type: str = None,
     type_property: str = Query(..., min_length=1),
     subject: str = Query(..., min_length=1),
     property: str = Query(..., min_length=1),
@@ -281,7 +300,7 @@ async def add_property_to_instance(
 ):
     """Функция соединяет инстанс и свойство."""
     allows_range = ["xsd:decimal", "xsd:int", "xsd:string"]
-    if value_type not in allows_range:
+    if value_type not in allows_range and type_property == 'DatatypeProperty':
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content="Check input args"
         )
@@ -295,7 +314,7 @@ async def add_property_to_instance(
         )
     if type_property == 'ObjectProperty':
         validation = await validate_input({
-            'NamedIndividual': subject
+            'NamedIndividual': object_class
         })
         if not validation[0]:
             return JSONResponse(
@@ -314,190 +333,6 @@ async def add_property_to_instance(
     return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content="Check input args")
 
 
-@app.post("/object_property/rename/")
-async def object_property_rename(
-    object_property_name: str = Query(..., min_length=1),
-    new_object_property_name: str = Query(..., min_length=1),
-):
-    """Функция изменения имени свойчтва между объектами."""
-    all_info = await get_full_info(object_property_name, "owl:ObjectProperty")
-    if not all_info:
-        return JSONResponse(
-            content="Such property doen't exist.",
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
-    for i in all_info:
-        if i["relation"].split("#")[1][:-1] == "type":
-            database.execute_delete_query(
-                f'<{i["subject"].split("/")[-1][:-1]}>',
-                object_property_template[f'{i["relation"].split("#")[1][:-1]}'],
-                object_property_template[f'{i["object"].split("#")[1][:-1]}'],
-            )
-            database.execute_post_query(
-                f"<{new_object_property_name}>",
-                object_property_template[f'{i["relation"].split("#")[1][:-1]}'],
-                object_property_template[f'{i["object"].split("#")[1][:-1]}'],
-            )
-        else:
-            database.execute_delete_query(
-                f'<{i["subject"].split("/")[-1][:-1]}>',
-                object_property_template[f'{i["relation"].split("#")[1][:-1]}'],
-                f'<{i["object"].split("/")[-1][:-1]}>',
-            )
-            database.execute_post_query(
-                f"<{new_object_property_name}>",
-                object_property_template[f'{i["relation"].split("#")[1][:-1]}'],
-                f'<{i["object"].split("/")[-1][:-1]}>',
-            )
-
-    return JSONResponse(status_code=status.HTTP_201_CREATED, content={})
-
-
-@app.post("/class/rename/")
-async def class_rename(
-    class_name: str = Query(..., min_length=1),
-    new_class_name: str = Query(..., min_length=1),
-):
-    """Функция изменения имени класса."""
-    all_info = await get_full_info(class_name, "owl:Class")
-    if not all_info:
-        return JSONResponse(
-            content="Such class doen't exist.",
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
-    for i in all_info:
-        if i["relation"].split("#")[1][:-1] == "type":
-            database.execute_delete_query(
-                f'<{i["subject"].split("/")[-1][:-1]}>',
-                class_template[f'{i["relation"].split("#")[1][:-1]}'],
-                class_template[f'{i["object"].split("#")[1][:-1]}'],
-            )
-            database.execute_post_query(
-                f"<{new_class_name}>",
-                class_template[f'{i["relation"].split("#")[1][:-1]}'],
-                class_template[f'{i["object"].split("#")[1][:-1]}'],
-            )
-        else:
-            database.execute_delete_query(
-                f'<{i["subject"].split("/")[-1][:-1]}>',
-                class_template[f'{i["relation"].split("#")[1][:-1]}'],
-                f'<{i["object"].split("/")[-1][:-1]}>',
-            )
-            database.execute_post_query(
-                f"<{new_class_name}>",
-                class_template[f'{i["relation"].split("#")[1][:-1]}'],
-                f'<{i["object"].split("/")[-1][:-1]}>',
-            )
-
-    return JSONResponse(status_code=status.HTTP_201_CREATED, content={})
-
-
-@app.post("/instance/rename/")
-async def instance_rename(instance_name, new_instance_name):
-    all_info = await get_full_info(instance_name, "owl:NamedIndividual")
-    if not all_info:
-        return JSONResponse(
-            content="Such class doen't exist.",
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
-    for i in all_info:
-        object = None
-        relation = None
-        try:
-            relation = i["relation"].split("#")[1][:-1]
-        except Exception:
-            pass
-        try:
-            object = i["object"].split("#")[1][:-1]
-        except Exception:
-            pass
-        if relation and object:
-            database.execute_delete_query(
-                f'<{i["subject"].split("/")[-1][:-1]}>',
-                instance_template[f'{i["relation"].split("#")[1][:-1]}'],
-                instance_template[f'{i["object"].split("#")[1][:-1]}'],
-            )
-            database.execute_post_query(
-                f"<{new_instance_name}>",
-                instance_template[f'{i["relation"].split("#")[1][:-1]}'],
-                instance_template[f'{i["object"].split("#")[1][:-1]}'],
-            )
-        elif not object and relation:
-            database.execute_delete_query(
-                f'<{i["subject"].split("/")[-1][:-1]}>',
-                instance_template[f'{i["relation"].split("#")[1][:-1]}'],
-                f'<{i["object"].split("/")[-1][:-1]}>',
-            )
-            database.execute_post_query(
-                f"<{new_instance_name}>",
-                instance_template[f'{i["relation"].split("#")[1][:-1]}'],
-                f'<{i["object"].split("/")[-1][:-1]}>',
-            )
-        elif not relation and object:
-            database.execute_delete_query(
-                f'<{i["subject"].split("/")[-1][:-1]}>',
-                f'<{i["relation"].split("/")[-1][:-1]}>',
-                f'"{i["object"].split("^^")[0][1:-1]}"^^{data_property_template[i["object"].split("#")[-1][:-1]]}',
-            )
-            database.execute_post_query(
-                f"<{new_instance_name}>",
-                f'<{i["relation"].split("/")[-1][:-1]}>',
-                f'"{i["object"].split("^^")[0][1:-1]}"^^{data_property_template[i["object"].split("#")[-1][:-1]]}',
-            )
-        else:
-            database.execute_delete_query(
-                f'<{i["subject"].split("/")[-1][:-1]}>',
-                f'<{i["relation"].split("/")[-1][:-1]}>',
-                f'<{i["object"].split("/")[-1][:-1]}>',
-            )
-            database.execute_post_query(
-                f"<{new_instance_name}>",
-                f'<{i["relation"].split("/")[-1][:-1]}>',
-                f'<{i["object"].split("/")[-1][:-1]}>',
-            )
-
-    return JSONResponse(status_code=status.HTTP_201_CREATED, content={})
-
-
-@app.post("/data_property/rename/")
-async def data_property_rename(data_property_name, new_data_property_name):
-    """Функция изменения свойства."""
-    all_info = await get_full_info(data_property_name, "owl:DatatypeProperty")
-    if not all_info:
-        return JSONResponse(
-            content="Such property doen't exist.",
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
-    for i in all_info:
-        if (
-            i["relation"].split("#")[1][:-1] == "type"
-            or i["relation"].split("#")[1][:-1] == "range"
-        ):
-            database.execute_delete_query(
-                f'<{i["subject"].split("/")[-1][:-1]}>',
-                data_property_template[f'{i["relation"].split("#")[1][:-1]}'],
-                data_property_template[f'{i["object"].split("#")[1][:-1]}'],
-            )
-            database.execute_post_query(
-                f"<{new_data_property_name}>",
-                data_property_template[f'{i["relation"].split("#")[1][:-1]}'],
-                data_property_template[f'{i["object"].split("#")[1][:-1]}'],
-            )
-        else:
-            database.execute_delete_query(
-                f'<{i["subject"].split("/")[-1][:-1]}>',
-                data_property_template[f'{i["relation"].split("#")[1][:-1]}'],
-                f'<{i["object"].split("/")[-1][:-1]}>',
-            )
-            database.execute_post_query(
-                f"<{new_data_property_name}>",
-                data_property_template[f'{i["relation"].split("#")[1][:-1]}'],
-                f'<{i["object"].split("/")[-1][:-1]}>',
-            )
-
-    return JSONResponse(status_code=status.HTTP_201_CREATED, content={})
-
-
 # DELETE
 
 
@@ -510,6 +345,12 @@ async def delete_data_property(data_property):
             content="Such property doen't exist.",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
+    individuals = set()
+    for i in database.execute_get_query():
+        if i["relation"].split("/")[-1][:-1] == data_property:
+            individuals.add(i["subject"].split("/")[-1][:-1])
+    for i in individuals:
+        await instance_delete_data_property(data_property, i)
     for i in all_info:
         if (
             i["relation"].split("#")[1][:-1] == "type"
@@ -526,10 +367,33 @@ async def delete_data_property(data_property):
                 data_property_template[f'{i["relation"].split("#")[1][:-1]}'],
                 f'<{i["object"].split("/")[-1][:-1]}>',
             )
-    return JSONResponse(
-        content={},
-        status_code=status.HTTP_204_NO_CONTENT,
-    )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@app.delete("/instance/data_property/delete/")
+async def instance_delete_data_property(data_property, individual_name):
+    """Функция удаления свойства у индивида."""
+    all_info = await get_full_info(individual_name, "owl:NamedIndividual")
+    if not all_info:
+        return JSONResponse(
+            content="Such individual doen't exist.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+    validation = await validate_input({
+        'DatatypeProperty': data_property,
+    })
+    if not validation[0]:
+        return JSONResponse(
+            content="Check input args", status_code=status.HTTP_400_BAD_REQUEST
+        )
+    for i in all_info:
+        if i["relation"].split("/")[-1][:-1] == data_property:
+            database.execute_delete_query(
+                f'<{i["subject"].split("/")[-1][:-1]}>',
+                f'<{i["relation"].split("/")[-1][:-1]}>',
+                f'"{i["object"].split("^^")[0][1:-1]}"^^{data_property_template[i["object"].split("#")[-1][:-1]]}',
+            )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @app.delete("/class/delete")
@@ -541,6 +405,13 @@ async def delete_class(subject_class):
             content="Such class doen't exist.",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
+    for i in database.execute_get_query():
+        if i["object"].split("/")[-1][:-1] == subject_class:
+            database.execute_delete_query(
+                f'<{i["subject"].split("/")[-1][:-1]}>',
+                class_template[f'{i["relation"].split("#")[1][:-1]}'],
+                f'<{i["object"].split("/")[-1][:-1]}>',
+            )
     for i in all_info:
         if i["relation"].split("#")[1][:-1] == "type":
             database.execute_delete_query(
@@ -554,7 +425,7 @@ async def delete_class(subject_class):
                 class_template[f'{i["relation"].split("#")[1][:-1]}'],
                 f'<{i["object"].split("/")[-1][:-1]}>',
             )
-    return JSONResponse(status_code=status.HTTP_204_NO_CONTENT, content={})
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @app.delete("/object_property/delete/")
@@ -566,6 +437,13 @@ async def delete_object_property(object_property):
             content="Such property doen't exist.",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
+    individuals = set()
+    for i in database.execute_get_query():
+        if i["relation"].split("/")[-1][:-1] == object_property:
+            individuals.add(i["subject"].split("/")[-1][:-1])
+            individuals.add(i["object"].split("/")[-1][:-1])
+    for i in individuals:
+        await instance_delete_object_property(object_property, i)
     for i in all_info:
         if i["relation"].split("#")[1][:-1] == "type":
             database.execute_delete_query(
@@ -580,13 +458,38 @@ async def delete_object_property(object_property):
                 f'<{i["object"].split("/")[-1][:-1]}>',
             )
 
-    return JSONResponse(status_code=status.HTTP_204_NO_CONTENT, content={})
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
+
+@app.delete("/instance/object_property/delete/")
+async def instance_delete_object_property(object_property, individual_name):
+    """Функция удаления свойства у индивида."""
+    all_info = await get_full_info(individual_name, "owl:NamedIndividual")
+    if not all_info:
+        return JSONResponse(
+            content="Such individual doen't exist.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+    validation = await validate_input({
+        'ObjectProperty': object_property,
+    })
+    if not validation[0]:
+        return JSONResponse(
+            content="Check input args", status_code=status.HTTP_400_BAD_REQUEST
+        )
+    for i in all_info:
+        if i["relation"].split("/")[-1][:-1] == object_property:
+            database.execute_delete_query(
+                f'<{i["subject"].split("/")[-1][:-1]}>',
+                f'<{i["relation"].split("/")[-1][:-1]}>',
+                f'<{i["object"].split("/")[-1][:-1]}>',
+            )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 @app.delete("/instance/delete/")
 async def delete_instance(instance_name):
     """Функция удаления инстанса."""
-    all_info = await get_full_info(instance_name, "owl:DatatypeProperty")
+    all_info = await get_full_info(instance_name, "owl:NamedIndividual")
     if not all_info:
         return JSONResponse(
             content="Such instance doen't exist.",
@@ -628,7 +531,7 @@ async def delete_instance(instance_name):
                 f'<{i["object"].split("/")[-1][:-1]}>',
             )
 
-    return JSONResponse(status_code=status.HTTP_201_CREATED, content={})
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 if __name__ == "__main__":
@@ -657,3 +560,5 @@ if __name__ == "__main__":
 #        content={"data": content},
 #        status_code=status.HTTP_200_OK
 #    )
+
+# Сделать переименованиее у существующих инстансов
