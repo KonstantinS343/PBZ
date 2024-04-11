@@ -1,10 +1,12 @@
 from franz.openrdf.repository import Repository
 from franz.openrdf.sail import AllegroGraphServer
 from fastapi import UploadFile
-from typing import Optional
-import settings
 
+from typing import Optional
 import re
+import os
+
+import settings
 
 
 server = AllegroGraphServer(
@@ -43,6 +45,8 @@ def handle_file(filename: str):
 
 
 async def write_file(file: Optional[UploadFile]) -> bool:
+    if os.path.isfile(os.path.join(settings.OWL_FILES_STORAGE, file.filename)):
+        return True
     if file is None:
         return False
 
@@ -147,12 +151,13 @@ def execute_delete_query(subject, predicate, object):
         return connection.executeUpdate(query=string_query)
 
 
-# SELECT ?s ?p ?o WHERE {
-#  ?s ?p ?o . ?s a owl:NamedIndividual
-#  FILTER(?p != rdf:type)
-# }
-# SELECT ?s ?p WHERE {
-#  ?s ?p owl:NamedIndividual .
-#  FILTER(?p != rdf:type)
-# }
-# SELECT distinct ?s ?o WHERE {?s ?p ?o . ?s a owl:NamedIndividual}
+def delete_all():
+    string_query = "DELETE WHERE { ?s ?p ?o }"
+
+    for i in os.listdir(settings.OWL_FILES_STORAGE):
+        file_path = os.path.join(settings.OWL_FILES_STORAGE, i)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+
+    with repository.getConnection() as connection:
+        return connection.executeUpdate(query=string_query)

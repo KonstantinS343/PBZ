@@ -71,6 +71,13 @@ async def get_individual():
 async def get_individual_by_name(name: str):
     """Функция возвращает характеристику индивида по имени."""
     content = []
+    validation = await validate_input({
+        'NamedIndividual': name,
+    })
+    if not validation[0]:
+        return JSONResponse(
+            content="Such individual doesn't exist.", status_code=status.HTTP_400_BAD_REQUEST
+        )
 
     query_result = database.execute_get_individuals_query(name=name)
     for item in query_result:
@@ -94,7 +101,19 @@ async def get_individual_by_name(name: str):
                 'object_property': relation,
                 'other_class': object
             })
-        content.append([item_dict])
+        content.append(item_dict)
+
+    individual_class = None
+
+    for i in database.execute_get_query():
+        if i["subject"].split("/")[-1][:-1] == name and \
+           not i["object"].split("/")[-1][:-1].startswith('owl') and \
+           i["relation"].split("#")[1][:-1] == 'type':
+            individual_class = i["object"].split("/")[-1][:-1]
+            break
+
+    for i in content:
+        i['class'] = individual_class
 
     return JSONResponse(content={"data": content}, status_code=status.HTTP_200_OK)
 
@@ -206,11 +225,11 @@ async def create_object_property(
         )
     if not await check_class_existing(domain_1):
         return JSONResponse(
-            content="Such class doen't exist.", status_code=status.HTTP_400_BAD_REQUEST
+            content="Such class doesn't exist.", status_code=status.HTTP_400_BAD_REQUEST
         )
     if not await check_class_existing(domain_2):
         return JSONResponse(
-            content="Such class doen't exist.", status_code=status.HTTP_400_BAD_REQUEST
+            content="Such class doesn't exist.", status_code=status.HTTP_400_BAD_REQUEST
         )
     if (
         database.execute_post_query(
@@ -237,7 +256,7 @@ async def create_subclass(
     child_class = await check_class_existing(classname)
     if not parent_class:
         return JSONResponse(
-            content="Such parent class doen't exist.",
+            content="Such parent class doesn't exist.",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
     if not child_class:
@@ -277,7 +296,7 @@ async def create_instance(
         )
     if not await check_class_existing(instance_type):
         return JSONResponse(
-            content="Such class doen't exist.", status_code=status.HTTP_400_BAD_REQUEST
+            content="Such class doesn't exist.", status_code=status.HTTP_400_BAD_REQUEST
         )
     if database.execute_post_query(
         f"<{instance_name}>", "rdf:type", "owl:NamedIndividual"
@@ -342,7 +361,7 @@ async def delete_data_property(data_property):
     all_info = await get_full_info(data_property, "owl:DatatypeProperty")
     if not all_info:
         return JSONResponse(
-            content="Such property doen't exist.",
+            content="Such property doesn't exist.",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
     individuals = set()
@@ -376,7 +395,7 @@ async def instance_delete_data_property(data_property, individual_name):
     all_info = await get_full_info(individual_name, "owl:NamedIndividual")
     if not all_info:
         return JSONResponse(
-            content="Such individual doen't exist.",
+            content="Such individual doesn't exist.",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
     validation = await validate_input({
@@ -402,9 +421,15 @@ async def delete_class(subject_class):
     all_info = await get_full_info(subject_class, "owl:Class")
     if not all_info:
         return JSONResponse(
-            content="Such class doen't exist.",
+            content="Such class doesn't exist.",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
+    individuals = set()
+    for i in database.execute_get_query():
+        if i["object"].split("/")[-1][:-1] == subject_class:
+            individuals.add(i["subject"].split("/")[-1][:-1])
+    for i in individuals:
+        await delete_instance(i)
     for i in database.execute_get_query():
         if i["object"].split("/")[-1][:-1] == subject_class:
             database.execute_delete_query(
@@ -434,7 +459,7 @@ async def delete_object_property(object_property):
     all_info = await get_full_info(object_property, "owl:ObjectProperty")
     if not all_info:
         return JSONResponse(
-            content="Such property doen't exist.",
+            content="Such property doesn't exist.",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
     individuals = set()
@@ -467,7 +492,7 @@ async def instance_delete_object_property(object_property, individual_name):
     all_info = await get_full_info(individual_name, "owl:NamedIndividual")
     if not all_info:
         return JSONResponse(
-            content="Such individual doen't exist.",
+            content="Such individual doesn't exist.",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
     validation = await validate_input({
@@ -486,15 +511,22 @@ async def instance_delete_object_property(object_property, individual_name):
             )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
+
 @app.delete("/instance/delete/")
 async def delete_instance(instance_name):
     """Функция удаления инстанса."""
     all_info = await get_full_info(instance_name, "owl:NamedIndividual")
     if not all_info:
         return JSONResponse(
-            content="Such instance doen't exist.",
+            content="Such instance doesn't exist.",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
+    individuals = set()
+    for i in database.execute_get_query():
+        if i["object"].split("/")[-1][:-1] == instance_name:
+            individuals.add((i["subject"].split("/")[-1][:-1], i["relation"].split("/")[-1][:-1]))
+    for i in individuals:
+        await instance_delete_object_property(i[1], i[0])
     for i in all_info:
         object = None
         relation = None
@@ -534,6 +566,13 @@ async def delete_instance(instance_name):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+@app.delete("/delete/all")
+async def delete_all():
+    """Функция удаления сего."""
+    database.delete_all()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",
@@ -541,24 +580,3 @@ if __name__ == "__main__":
         port=int(APP_PORT),
         lifespan="on",
     )
-
-
-# @app.get("/class/individual/")
-# async def get_individual_by_class():
-#    """Функция возвращает индивидов класса."""
-#    content = []
-#
-#    query_result = database.execute_get_individuals_query()
-#    for item in query_result:
-#        subject = item["subject"].split('/')[-1][:-1]
-#        object = item["object"].split('/')[-1][:-1]
-#        content.append({
-#            'instance': subject,
-#            })
-#
-#    return JSONResponse(
-#        content={"data": content},
-#        status_code=status.HTTP_200_OK
-#    )
-
-# Сделать переименованиее у существующих инстансов
