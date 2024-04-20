@@ -5,12 +5,13 @@ from tkinter import filedialog
 import tkinter as tk
 from tkinter import messagebox
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Set
 from dataclasses import dataclass
 
 import database
 from database import write_file
-from services import validate_input, check_class_existing
+from services import validate_input, check_class_existing, get_full_info
+from template import object_property_template, class_template, data_property_template, instance_template
 
 
 @dataclass(slots=True)
@@ -240,14 +241,19 @@ class OntotlogyEditor:
 
         create_button = ttk.Button(tool_frame, text="Create", command=lambda: self.create_form_window(tab.tab))
         create_button.grid(row=2, padx=5, pady=5, sticky="ew")
-        if tab != self.subclass_tab:
+        if tab.tab != self.subclass_tab:
             delete_button = ttk.Button(tool_frame, text="Delete", command=lambda: self.delete(tab))
             delete_button.grid(row=3, padx=5, pady=5, sticky="ew")
 
-        if tab == self.individual_tab:
+        if tab.tab == self.object_property_tab or tab.tab == self.data_property_tab:
+            connect_property_button = ttk.Button(tool_frame, text="Delete Individual",
+                                                 command=lambda: self.delete_individual_property_form(tab.tab))
+            connect_property_button.grid(row=4, padx=5, pady=5, sticky="ew")
+
+        if tab.tab == self.individual_tab:
             individual_info = ttk.Button(tool_frame, text="Individual Info", command=self.toggle_search_window)
             individual_info.grid(row=4, padx=5, pady=5, sticky="ew")
-            individual_info = ttk.Button(tool_frame, text="Connect Property", command=self.toggle_search_window)
+            individual_info = ttk.Button(tool_frame, text="Connect Property", command=self.connect_property_window)
             individual_info.grid(row=5, padx=5, pady=5, sticky="ew")
 
     def create(self, tab: ttk.Frame, data: Dict[str, str]):
@@ -443,7 +449,7 @@ class OntotlogyEditor:
         if not child_class:
             database.execute_post_query(f"<{data['classname']}>", "rdf:type", "owl:Class")
         else:
-            #  delete_class(child_class)
+            self.delete_class(data['classname'])
             database.execute_post_query(f"<{data['classname']}>", "rdf:type", "owl:Class")
         if database.execute_post_query(f"<{data['classname']}>", "rdfs:subClassOf", f"<{data['parent']}>"):
             self.refresh_tables(self.tabs)
@@ -480,17 +486,17 @@ class OntotlogyEditor:
                 })
             content.append(item_dict)
 
-        individual_class = None
+        # individual_class = None
 
-        for i in database.execute_get_query():
-            if i["subject"].split("/")[-1][:-1] == individual and \
-               not i["object"].split("/")[-1][:-1].startswith('owl') and \
-               i["relation"].split("#")[1][:-1] == 'type':
-                individual_class = i["object"].split("/")[-1][:-1]
-                break
+        # for i in database.execute_get_query():
+        #     if i["subject"].split("/")[-1][:-1] == individual and \
+        #        not i["object"].split("/")[-1][:-1].startswith('owl') and \
+        #        i["relation"].split("#")[1][:-1] == 'type':
+        #         individual_class = i["object"].split("/")[-1][:-1]
+        #         break
 
-        for i in content:
-            i['class'] = individual_class
+        # for i in content:
+        #     i['class'] = individual_class
 
         return self.handle_data_in_dict_output(content)
 
@@ -532,34 +538,315 @@ class OntotlogyEditor:
         database.delete_all()
         self.refresh_tables(self.tabs)
 
+    def connect_property_window(self):
+        self.connect_property_from_window = Tk()
+        self.connect_property_from_window.title("Connect Property")
+        self.connect_property_from_window.geometry("500x500")
+        entries = []
+
+        label = ttk.Label(self.connect_property_from_window, text="Property Type")
+        label.place(relx=0.5, rely=0.05, anchor=CENTER)
+        entry = ttk.Entry(self.connect_property_from_window)
+        entry.place(relx=0.5, rely=0.1, anchor=CENTER)
+        entries.append(entry)
+
+        label = ttk.Label(self.connect_property_from_window, text="Object Name")
+        label.place(relx=0.5, rely=0.2, anchor=CENTER)
+        entry = ttk.Entry(self.connect_property_from_window)
+        entry.place(relx=0.5, rely=0.25, anchor=CENTER)
+        entries.append(entry)
+
+        label = ttk.Label(self.connect_property_from_window, text="Property")
+        label.place(relx=0.5, rely=0.35, anchor=CENTER)
+        entry = ttk.Entry(self.connect_property_from_window)
+        entry.place(relx=0.5, rely=0.4, anchor=CENTER)
+        entries.append(entry)
+
+        label = ttk.Label(self.connect_property_from_window, text="Value")
+        label.place(relx=0.5, rely=0.5, anchor=CENTER)
+        entry = ttk.Entry(self.connect_property_from_window)
+        entry.place(relx=0.5, rely=0.55, anchor=CENTER)
+        entries.append(entry)
+
+        label = ttk.Label(self.connect_property_from_window, text="Value Type(Optional)")
+        label.place(relx=0.5, rely=0.65, anchor=CENTER)
+        entry = ttk.Entry(self.connect_property_from_window)
+        entry.place(relx=0.5, rely=0.7, anchor=CENTER)
+        entries.append(entry)
+
+        self.submit_button = ttk.Button(self.connect_property_from_window,
+                                        text="Submit", command=lambda: self.connect_property(entries))
+        self.submit_button.place(relx=0.5, rely=0.85, anchor=CENTER)
+
+    def connect_property(self, entries: List[ttk.Entry]):
+        self.connect_property_from_window.destroy()
+        type_property = entries[0].get()
+        subject = entries[1].get()
+        property = entries[2].get()
+        object_class = entries[3].get()
+        value_type = entries[4].get()
+
+        allows_range = ["xsd:decimal", "xsd:int", "xsd:string"]
+        if value_type not in allows_range and type_property == 'DatatypeProperty':
+            messagebox.showwarning("Warning", "Check input args.")
+            return
+        validation = validate_input({
+            'NamedIndividual': subject,
+            type_property: property
+        })
+        if not validation[0]:
+            messagebox.showwarning("Warning", "Check input args.")
+            return
+        if type_property == 'ObjectProperty':
+            validation = validate_input({
+                'NamedIndividual': object_class
+            })
+            if not validation[0]:
+                messagebox.showwarning("Warning", "Check input args.")
+                return
+            if database.execute_post_query(
+                f"<{subject}>", f"<{property}>", f"<{object_class}>"
+            ):
+                self.refresh_tables(self.tabs)
+        elif type_property == 'DatatypeProperty':
+            if database.execute_post_query(
+                f"<{subject}>", f"<{property}>", f'"{object_class}"^^{value_type}'
+            ):
+                self.refresh_tables(self.tabs)
+
     def delete(self, tab: Tab):
         selected_cells = tab.sheet.get_selected_cells()
         data: List[str] = [tab.sheet.get_cell_data(*i) for i in selected_cells]  # type: ignore
         if tab.tab == self.class_tab:
-            self.delete_class(data)
+            for i in data:
+                self.delete_class(i)
         elif tab.tab == self.individual_tab:
-            self.delete_individual(data)
+            for i in data:
+                self.delete_instance(i)
         elif tab.tab == self.object_property_tab:
-            self.delete_object_property(data)
+            for i in data:
+                self.delete_object_property(i)
         elif tab.tab == self.data_property_tab:
-            self.delete_data_property(data)
-        elif tab.tab == self.subclass_tab:
-            return self.delete_subclass(data)
+            for i in data:
+                self.delete_data_property(i)
 
-    def delete_class(self, data: List[str]):
-        pass
+    def delete_individual_property_form(self, tab: ttk.Frame):
+        self.delete_form_window = Tk()
+        self.delete_form_window.title("Delete Property Form")
+        entries = []
+        self.delete_form_window.geometry("500x300")
+        label = ttk.Label(self.delete_form_window, text="Property Name")
+        label.place(relx=0.5, rely=0.1, anchor=CENTER)
+        entry = ttk.Entry(self.delete_form_window)
+        entry.place(relx=0.5, rely=0.25, anchor=CENTER)
+        entries.append(entry)
 
-    def delete_individual(self, data: List[str]):
-        pass
+        label = ttk.Label(self.delete_form_window, text="Individual Name")
+        label.place(relx=0.5, rely=0.4, anchor=CENTER)
+        entry = ttk.Entry(self.delete_form_window)
+        entry.place(relx=0.5, rely=0.55, anchor=CENTER)
+        entries.append(entry)
 
-    def delete_object_property(self, data: List[str]):
-        pass
+        self.submit_button = ttk.Button(self.delete_form_window, text="Submit",
+                                        command=lambda: self.delete_individual_property(tab, entries))
+        self.submit_button.place(relx=0.5, rely=0.8, anchor=CENTER)
 
-    def delete_data_property(self, data: List[str]):
-        pass
+    def delete_individual_property(self, tab: ttk.Frame, entries: List[ttk.Entry]):
+        self.delete_form_window.destroy()
+        if tab == self.data_property_tab:
+            self.instance_delete_data_property(entries[0].get(), entries[1].get())
+        else:
+            self.instance_delete_object_property(entries[0].get(), entries[1].get())
 
-    def delete_subclass(self, data: List[str]):
-        pass
+    def instance_delete_data_property(self, data_property: str, individual_name: str, hide=False):
+        all_info = get_full_info(individual_name, "owl:NamedIndividual")
+        if not all_info:
+            messagebox.showwarning("Warning", "Such individual doesn't exist.")
+            return
+        validation = validate_input({
+            'DatatypeProperty': data_property,
+        })
+        if not validation[0]:
+            messagebox.showwarning("Warning", "Check input args.")
+            return
+        for i in all_info:
+            if i["relation"].split("/")[-1][:-1] == data_property:
+                database.execute_delete_query(
+                    f'<{i["subject"].split("/")[-1][:-1]}>',
+                    f'<{i["relation"].split("/")[-1][:-1]}>',
+                    f'"{i["object"].split("^^")[0][1:-1]}"^^{data_property_template[i["object"].split("#")[-1][:-1]]}',
+                )
+        if not hide:
+            self.refresh_tables(self.tabs)
+
+    def instance_delete_object_property(self, object_property: str, individual_name: str, hide=False):
+        all_info = get_full_info(individual_name, "owl:NamedIndividual")
+        if not all_info:
+            messagebox.showwarning("Warning", "Such individual doesn't exist.")
+            return
+        validation = validate_input({
+            'ObjectProperty': object_property,
+        })
+        if not validation[0]:
+            messagebox.showwarning("Warning", "Check input args.")
+            return
+        for i in all_info:
+            if i["relation"].split("/")[-1][:-1] == object_property:
+                database.execute_delete_query(
+                    f'<{i["subject"].split("/")[-1][:-1]}>',
+                    f'<{i["relation"].split("/")[-1][:-1]}>',
+                    f'<{i["object"].split("/")[-1][:-1]}>',
+                )
+        if not hide:
+            self.refresh_tables(self.tabs)
+
+    def delete_class(self, subject_class: str):
+        all_info = get_full_info(subject_class, "owl:Class")
+        if not all_info:
+            messagebox.showwarning("Warning", "Such class doesn't exist.")
+            return
+        connected_object: Set[str] = set()
+        for i in database.execute_get_query():
+            if i["object"].split("/")[-1][:-1] == subject_class:
+                connected_object.add(i["subject"].split("/")[-1][:-1])
+        for i in connected_object:
+            self.delete_instance(i, hide=True)
+            self.delete_data_property(i, hide=True)
+            self.delete_object_property(i, hide=True)
+        for i in database.execute_get_query():
+            if i["object"].split("/")[-1][:-1] == subject_class:
+                database.execute_delete_query(
+                    f'<{i["subject"].split("/")[-1][:-1]}>',
+                    class_template[f'{i["relation"].split("#")[1][:-1]}'],
+                    f'<{i["object"].split("/")[-1][:-1]}>',
+                )
+        for i in all_info:
+            if i["relation"].split("#")[1][:-1] == "type":
+                database.execute_delete_query(
+                    f'<{i["subject"].split("/")[-1][:-1]}>',
+                    class_template[f'{i["relation"].split("#")[1][:-1]}'],
+                    class_template[f'{i["object"].split("#")[1][:-1]}'],
+                )
+            else:
+                database.execute_delete_query(
+                    f'<{i["subject"].split("/")[-1][:-1]}>',
+                    class_template[f'{i["relation"].split("#")[1][:-1]}'],
+                    f'<{i["object"].split("/")[-1][:-1]}>',
+                )
+
+        self.refresh_tables(self.tabs)
+
+    def delete_instance(self, instance_name: str, hide=False):
+        all_info = get_full_info(instance_name, "owl:NamedIndividual")
+        if not all_info:
+            if not hide:
+                messagebox.showwarning("Warning", "Such instance doesn't exist.")
+            return
+        individuals = set()
+        for i in database.execute_get_query():
+            if i["object"].split("/")[-1][:-1] == instance_name:
+                individuals.add((i["subject"].split("/")[-1][:-1], i["relation"].split("/")[-1][:-1]))
+        for i in individuals:
+            self.instance_delete_object_property(i[1], i[0], hide=True)
+
+        for i in all_info:
+            object = None
+            relation = None
+            try:
+                relation = i["relation"].split("#")[1][:-1]
+            except Exception:
+                pass
+            try:
+                object = i["object"].split("#")[1][:-1]
+            except Exception:
+                pass
+            if relation and object:
+                database.execute_delete_query(
+                    f'<{i["subject"].split("/")[-1][:-1]}>',
+                    instance_template[f'{i["relation"].split("#")[1][:-1]}'],
+                    instance_template[f'{i["object"].split("#")[1][:-1]}'],
+                )
+            elif not object and relation:
+                database.execute_delete_query(
+                    f'<{i["subject"].split("/")[-1][:-1]}>',
+                    instance_template[f'{i["relation"].split("#")[1][:-1]}'],
+                    f'<{i["object"].split("/")[-1][:-1]}>',
+                )
+            elif not relation and object:
+                database.execute_delete_query(
+                    f'<{i["subject"].split("/")[-1][:-1]}>',
+                    f'<{i["relation"].split("/")[-1][:-1]}>',
+                    f'"{i["object"].split("^^")[0][1:-1]}"^^{data_property_template[i["object"].split("#")[-1][:-1]]}',
+                )
+            else:
+                database.execute_delete_query(
+                    f'<{i["subject"].split("/")[-1][:-1]}>',
+                    f'<{i["relation"].split("/")[-1][:-1]}>',
+                    f'<{i["object"].split("/")[-1][:-1]}>',
+                )
+        if not hide:
+            self.refresh_tables(self.tabs)
+
+    def delete_object_property(self, object_property: str, hide=False):
+        all_info = get_full_info(object_property, "owl:ObjectProperty")
+        if not all_info:
+            if not hide:
+                messagebox.showwarning("Warning", "Such property doesn't exist.")
+            return
+        individuals = set()
+        for i in database.execute_get_query():
+            if i["relation"].split("/")[-1][:-1] == object_property:
+                individuals.add(i["subject"].split("/")[-1][:-1])
+                individuals.add(i["object"].split("/")[-1][:-1])
+        for i in individuals:
+            self.instance_delete_object_property(object_property, i, hide=True)
+
+        for i in all_info:
+            if i["relation"].split("#")[1][:-1] == "type":
+                database.execute_delete_query(
+                    f'<{i["subject"].split("/")[-1][:-1]}>',
+                    object_property_template[f'{i["relation"].split("#")[1][:-1]}'],
+                    object_property_template[f'{i["object"].split("#")[1][:-1]}'],
+                )
+            else:
+                database.execute_delete_query(
+                    f'<{i["subject"].split("/")[-1][:-1]}>',
+                    object_property_template[f'{i["relation"].split("#")[1][:-1]}'],
+                    f'<{i["object"].split("/")[-1][:-1]}>',
+                )
+        if not hide:
+            self.refresh_tables(self.tabs)
+
+    def delete_data_property(self, data_property: str, hide=False):
+        all_info = get_full_info(data_property, "owl:DatatypeProperty")
+        if not all_info:
+            if not hide:
+                messagebox.showwarning("Warning", "Such property doesn't exist.")
+            return
+        individuals = set()
+        for i in database.execute_get_query():
+            if i["relation"].split("/")[-1][:-1] == data_property:
+                individuals.add(i["subject"].split("/")[-1][:-1])
+        for i in individuals:
+            self.instance_delete_data_property(data_property, i, hide=True)
+        for i in all_info:
+            if (
+                i["relation"].split("#")[1][:-1] == "type"
+                or i["relation"].split("#")[1][:-1] == "range"
+            ):
+                database.execute_delete_query(
+                    f'<{i["subject"].split("/")[-1][:-1]}>',
+                    data_property_template[f'{i["relation"].split("#")[1][:-1]}'],
+                    data_property_template[f'{i["object"].split("#")[1][:-1]}'],
+                )
+            else:
+                database.execute_delete_query(
+                    f'<{i["subject"].split("/")[-1][:-1]}>',
+                    data_property_template[f'{i["relation"].split("#")[1][:-1]}'],
+                    f'<{i["object"].split("/")[-1][:-1]}>',
+                )
+        if not hide:
+            self.refresh_tables(self.tabs)
 
     def run(self):
         self.window.mainloop()

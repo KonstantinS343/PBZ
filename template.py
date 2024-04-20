@@ -10,6 +10,8 @@ class_template = {
     "type": "rdf:type",
     "subClassOf": "rdfs:subClassOf",
     "Class": "owl:Class",
+    "domain": "rdfs:domain",
+    "range": "rdfs:range"
 }
 
 

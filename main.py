@@ -209,7 +209,7 @@ async def create_data_property(
     return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={})
 
 
-@app.post("/object_property/create/")
+@app.post("/object_property/create/") # Done
 async def create_object_property(
     object_property: str = Query(..., min_length=1),
     domain_1: str = Query(..., min_length=1),
@@ -309,7 +309,7 @@ async def create_instance(
     return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={})
 
 
-@app.post("/property/connect/")
+@app.post("/property/connect/") # Done
 async def add_property_to_instance(
     value_type: str = None,
     type_property: str = Query(..., min_length=1),
@@ -355,7 +355,7 @@ async def add_property_to_instance(
 # DELETE
 
 
-@app.delete("/data_property/delete/")
+@app.delete("/data_property/delete/") # Done
 async def delete_data_property(data_property):
     """Функция удаления свойства."""
     all_info = await get_full_info(data_property, "owl:DatatypeProperty")
@@ -415,7 +415,7 @@ async def instance_delete_data_property(data_property, individual_name):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@app.delete("/class/delete")
+@app.delete("/class/delete") # Done
 async def delete_class(subject_class):
     """Функция удаления класса."""
     all_info = await get_full_info(subject_class, "owl:Class")
@@ -453,7 +453,7 @@ async def delete_class(subject_class):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@app.delete("/object_property/delete/")
+@app.delete("/object_property/delete/") # Done
 async def delete_object_property(object_property):
     """delete object property"""
     all_info = await get_full_info(object_property, "owl:ObjectProperty")
@@ -486,7 +486,7 @@ async def delete_object_property(object_property):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@app.delete("/instance/object_property/delete/")
+@app.delete("/instance/object_property/delete/") # Done
 async def instance_delete_object_property(object_property, individual_name):
     """Функция удаления свойства у индивида."""
     all_info = await get_full_info(individual_name, "owl:NamedIndividual")
@@ -512,7 +512,7 @@ async def instance_delete_object_property(object_property, individual_name):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@app.delete("/instance/delete/")
+@app.delete("/instance/delete/") # Done
 async def delete_instance(instance_name):
     """Функция удаления инстанса."""
     all_info = await get_full_info(instance_name, "owl:NamedIndividual")
@@ -566,7 +566,7 @@ async def delete_instance(instance_name):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@app.delete("/delete/all")
+@app.delete("/delete/all") # Done
 async def delete_all():
     """Функция удаления всего."""
     database.delete_all()
