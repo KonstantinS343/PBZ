@@ -1,8 +1,6 @@
 from franz.openrdf.repository import Repository
 from franz.openrdf.sail import AllegroGraphServer
-from fastapi import UploadFile
 
-from typing import Optional
 import re
 import os
 
@@ -44,18 +42,21 @@ def handle_file(filename: str):
         f.write(content)
 
 
-async def write_file(file: Optional[UploadFile]) -> bool:
-    if os.path.isfile(os.path.join(settings.OWL_FILES_STORAGE, file.filename)):
+def write_file(filename: str) -> bool:
+    if os.path.isfile(os.path.join(settings.OWL_FILES_STORAGE, filename.split('/')[-1])):
         return True
-    if file is None:
+    if filename is None:
         return False
 
-    with open(settings.OWL_FILES_STORAGE + file.filename, "wb") as created_file:
-        content = await file.read()
+    with open(filename, 'rb') as read_file:
+        content = read_file.read()
+    filename = filename.split('/')[-1]
+
+    with open(settings.OWL_FILES_STORAGE + filename, "wb") as created_file:
         created_file.write(content)
         created_file.close()
-    handle_file(file.filename)
-    add_file_to_rep(file.filename)
+    handle_file(filename)
+    add_file_to_rep(filename)
 
     return True
 

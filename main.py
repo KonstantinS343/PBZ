@@ -12,7 +12,7 @@ from template import object_property_template, class_template, data_property_tem
 app = FastAPI()
 
 
-@app.post("/file/upload/")
+@app.post("/file/upload/") # Done
 async def root(file: Annotated[UploadFile, File(description="Some description")]):
     """Функция заргузки файла."""
     await database.write_file(file)
@@ -25,7 +25,7 @@ async def root(file: Annotated[UploadFile, File(description="Some description")]
 # GET
 
 
-@app.get("/class/")
+@app.get("/class/") # Done
 async def get_classes():
     """Функция возвращает все классы онтологии."""
     content = []
@@ -37,7 +37,7 @@ async def get_classes():
     return JSONResponse(content={"data": content}, status_code=status.HTTP_200_OK)
 
 
-@app.get("/class/subclasses/")
+@app.get("/class/subclasses/") # Done
 async def get_subclasses():
     """Функция возвращает все подклассы онтологии."""
     content = []
@@ -55,7 +55,7 @@ async def get_subclasses():
     return JSONResponse(content=content, status_code=status.HTTP_200_OK)
 
 
-@app.get("/individuals/")
+@app.get("/individuals/") # Done
 async def get_individual():
     """Функция возвращает всех индивидов онтологии."""
     content = []
@@ -67,7 +67,7 @@ async def get_individual():
     return JSONResponse(content={"data": content}, status_code=status.HTTP_200_OK)
 
 
-@app.get("/individual/{name}/")
+@app.get("/individual/{name}/") # Done
 async def get_individual_by_name(name: str):
     """Функция возвращает характеристику индивида по имени."""
     content = []
@@ -118,7 +118,7 @@ async def get_individual_by_name(name: str):
     return JSONResponse(content={"data": content}, status_code=status.HTTP_200_OK)
 
 
-@app.get("/object_property/")
+@app.get("/object_property/") # Done
 async def get_object_property():
     """Функция возвращает все отношения между объектами в онтологии."""
     content = []
@@ -142,7 +142,7 @@ async def get_object_property():
     return JSONResponse(status_code=status.HTTP_200_OK, content=content)
 
 
-@app.get("/data_property/")
+@app.get("/data_property/") # Done
 async def get_data_properties():
     """Функция возвращает все свойства в онтологии."""
     content = []
@@ -169,7 +169,7 @@ async def get_data_properties():
 # POST
 
 
-@app.post("/data_property/create/")
+@app.post("/data_property/create/") # Done
 async def create_data_property(
     data_property: str = Query(..., min_length=1),
     domain: str = Query(..., min_length=1),
@@ -247,7 +247,7 @@ async def create_object_property(
     return JSONResponse(content={}, status_code=status.HTTP_400_BAD_REQUEST)
 
 
-@app.post("/subclass/create/")
+@app.post("/subclass/create/") # Done
 async def create_subclass(
     classname: str = Query(..., min_length=1), parent: str = Query(..., min_length=1)
 ):
@@ -270,7 +270,7 @@ async def create_subclass(
     return JSONResponse(content={}, status_code=status.HTTP_400_BAD_REQUEST)
 
 
-@app.post("/classes/create/")
+@app.post("/classes/create/") # Done
 async def create_class(classname: str = Query(..., min_length=1)):
     """Функция создания нового класса."""
     if await check_class_existing(classname):
@@ -281,7 +281,7 @@ async def create_class(classname: str = Query(..., min_length=1)):
     return JSONResponse(content={}, status_code=status.HTTP_400_BAD_REQUEST)
 
 
-@app.post("/instance/create/")
+@app.post("/instance/create/") # Done
 async def create_instance(
     instance_name: str = Query(..., min_length=1),
     instance_type: str = Query(..., min_length=1),
@@ -568,7 +568,7 @@ async def delete_instance(instance_name):
 
 @app.delete("/delete/all")
 async def delete_all():
-    """Функция удаления сего."""
+    """Функция удаления всего."""
     database.delete_all()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 

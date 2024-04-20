@@ -3,7 +3,7 @@ import database
 from typing import Dict
 
 
-async def check_class_existing(class_name: str):
+def check_class_existing(class_name: str):
     class_existing = database.get_objects(object='owl:Class')
     for i in class_existing:
         if i['subject'].split('/')[-1][:-1] == class_name:
@@ -12,7 +12,7 @@ async def check_class_existing(class_name: str):
     return False
 
 
-async def validate_input(args: Dict[str, str]):
+def validate_input(args: Dict[str, str]):
     output = {
         'Class': False if 'Class' in args.keys() else True,
         'ObjectProperty': False if 'ObjectProperty' in args.keys() else True,
@@ -28,7 +28,7 @@ async def validate_input(args: Dict[str, str]):
     return (True if all(output.values()) else False, output)
 
 
-async def get_full_info(name: str, type: str):
+def get_full_info(name: str, type: str):
     query = database.get_objects(object=type)
     all_info = []
     for i in query:
