@@ -27,17 +27,18 @@ class OntotlogyEditor:
         self.tabs = []
         self.window.resizable(False, False)
         self.notebook = ttk.Notebook(self.window, width=1080)
+        self.notebook.bind("<<NotebookTabChanged>>", self.on_tab_changed)
         self.window.title(name)
         self.window.grid_columnconfigure(0, weight=1)
         self.window.grid_rowconfigure(0, weight=1)
 
-        self.search_label = tk.Label(self.window, text="Search:")
-        self.search_entry = tk.Entry(self.window)
-        self.search_button = tk.Button(self.window, text="Search", command=self.find_individual)
-
         self.configure_menu()
         self.init_tabs()
         self.configure_window()
+
+    def on_tab_changed(self, event):
+        selected_tab = event.widget.select()
+        self.tab_index = event.widget.index(selected_tab)
 
     def configure_menu(self):
         self.menu = tk.Menu()
@@ -81,7 +82,9 @@ class OntotlogyEditor:
     def handle_data_in_dict_output(self, data: List[Dict[Any, Any]]):
         content = []
         for i in data:
-            content.append([*i.values()])
+            content.append([i.get('subject'),
+                            i.get('relation'),
+                            i.get('object')])
 
         return content
 
@@ -96,11 +99,11 @@ class OntotlogyEditor:
             for i in database.execute_get_query():
                 if i["subject"].split("/")[-1][:-1] == item["subject"].split("/")[-1][:-1]:
                     if i["relation"].split("#")[1][:-1] == 'type':
-                        dict_item['property'] = item["subject"].split("/")[-1][:-1]
+                        dict_item['subject'] = item["subject"].split("/")[-1][:-1]
                     elif i["relation"].split("#")[1][:-1] == 'domain':
-                        dict_item['domain'] = i["object"].split("/")[-1][:-1]
+                        dict_item['relation'] = i["object"].split("/")[-1][:-1]
                     else:
-                        dict_item['range'] = i["object"].split("/")[-1][:-1]
+                        dict_item['object'] = i["object"].split("/")[-1][:-1]
             content.append(dict_item.copy())
             dict_item.clear()
 
@@ -117,11 +120,11 @@ class OntotlogyEditor:
             for i in database.execute_get_query():
                 if i["subject"].split("/")[-1][:-1] == item["subject"].split("/")[-1][:-1]:
                     if i["relation"].split("#")[1][:-1] == 'type':
-                        dict_item['property'] = item["subject"].split("/")[-1][:-1]
+                        dict_item['subject'] = item["subject"].split("/")[-1][:-1]
                     elif i["relation"].split("#")[1][:-1] == 'domain':
-                        dict_item['domain'] = i["object"].split("/")[-1][:-1]
+                        dict_item['relation'] = i["object"].split("/")[-1][:-1]
                     else:
-                        dict_item['range'] = 'xsd:' + i["object"].split("#")[1][:-1]
+                        dict_item['object'] = 'xsd:' + i["object"].split("#")[1][:-1]
             content.append(dict_item.copy())
             dict_item.clear()
 
@@ -133,14 +136,10 @@ class OntotlogyEditor:
         query_result = database.execute_get_query(relation="rdfs:subClassOf")
 
         for item in query_result:
-            content.append(
-                {
-                    "parent": item["object"].split("/")[-1][:-1],
-                    "subclass": item["subject"].split("/")[-1][:-1],
-                }
-            )
+            content.append([item["object"].split("/")[-1][:-1],
+                            item["subject"].split("/")[-1][:-1]])
 
-        return self.handle_data_in_dict_output(content)
+        return content
 
     def update_data(self, tab: ttk.Frame):
         if tab == self.class_tab:
@@ -174,6 +173,9 @@ class OntotlogyEditor:
                 )
             sheet.enable_bindings()
             sheet.extra_bindings("begin_edit_cell", self.begin_edit_cell)
+            if i == self.subclass_tab:
+                span = sheet.span(key=self.just_tabs[i.tab], header=True)
+                sheet.readonly(span)
             sheet.edit_validation(self.validate_edits)
             sheet.grid(row=0, column=1, sticky="nswe")
             sheet.headers(i.tab_name)
@@ -198,14 +200,14 @@ class OntotlogyEditor:
         self.create_tab_spaces()
 
     def create_tab_spaces(self) -> None:
-        just_tabs = {
+        self.just_tabs = {
             self.class_tab: ['Classes'],
             self.individual_tab: ['Individuals'],
             self.object_property_tab: ['Property', 'Domain', 'Range'],
             self.data_property_tab: ['Property', 'Domain', 'Range'],
             self.subclass_tab: ['Parent', 'Child'],
         }
-        for i in just_tabs.keys():
+        for i in self.just_tabs.keys():
             data = self.update_data(i)
             if not data:
                 data = ''
@@ -219,20 +221,33 @@ class OntotlogyEditor:
 
             sheet.enable_bindings()
             sheet.extra_bindings("begin_edit_cell", self.begin_edit_cell)
+            if i == self.subclass_tab:
+                span = sheet.span(key=self.just_tabs[i], header=True)
+                sheet.readonly(span)
             sheet.edit_validation(self.validate_edits)
-            sheet.headers(just_tabs[i])
+            sheet.headers(self.just_tabs[i])
             sheet.grid(row=0, column=1, sticky="nswe")
 
-            self.tabs.append(Tab(tab=i, sheet=sheet, tab_name=just_tabs[i]))
+            self.tabs.append(Tab(tab=i, sheet=sheet, tab_name=self.just_tabs[i]))
 
             self._setup_tools(self.tabs[-1])
 
     def begin_edit_cell(self, event=None):
-        print("Here")
-        return event.value
+        self.old_cell_value = event.value  # type: ignore
+        return event.value  # type: ignore
 
     def validate_edits(self, event):
-        print("Validate")
+        if self.tab_index == 0:
+            database.rename_subject_object(old_name=self.old_cell_value, new_name=event.value)
+        elif self.tab_index == 1:
+            database.rename_subject_object(old_name=self.old_cell_value, new_name=event.value)
+        elif self.tab_index == 2:
+            database.rename_relation(old_name=self.old_cell_value, new_name=event.value)
+        elif self.tab_index == 3:
+            database.rename_relation(old_name=self.old_cell_value, new_name=event.value)
+
+        self.refresh_tables(self.tabs)
+
         return event.value
 
     def _setup_tools(self, tab: Tab):
@@ -251,7 +266,7 @@ class OntotlogyEditor:
             connect_property_button.grid(row=4, padx=5, pady=5, sticky="ew")
 
         if tab.tab == self.individual_tab:
-            individual_info = ttk.Button(tool_frame, text="Individual Info", command=self.toggle_search_window)
+            individual_info = ttk.Button(tool_frame, text="Individual Info", command=lambda: self.search_window(tab))
             individual_info.grid(row=4, padx=5, pady=5, sticky="ew")
             individual_info = ttk.Button(tool_frame, text="Connect Property", command=self.connect_property_window)
             individual_info.grid(row=5, padx=5, pady=5, sticky="ew")
@@ -279,88 +294,89 @@ class OntotlogyEditor:
             label.place(relx=0.5, rely=0.1, anchor=CENTER)
             entry = ttk.Entry(self.form_window)
             entry.place(relx=0.5, rely=0.3, anchor=CENTER)
-            self.label_entry.append((label, entry))
+            self.label_entry.append(entry)
         elif tab == self.individual_tab:
             self.form_window.geometry("500x300")
             label = ttk.Label(self.form_window, text="Class Name")
             label.place(relx=0.5, rely=0.1, anchor=CENTER)
             entry = ttk.Entry(self.form_window)
             entry.place(relx=0.5, rely=0.25, anchor=CENTER)
-            self.label_entry.append((label, entry))
+            self.label_entry.append(entry)
             label = ttk.Label(self.form_window, text="Individual Name")
             label.place(relx=0.5, rely=0.4, anchor=CENTER)
             entry = ttk.Entry(self.form_window)
             entry.place(relx=0.5, rely=0.55, anchor=CENTER)
-            self.label_entry.append((label, entry))
+            self.label_entry.append(entry)
         elif tab == self.object_property_tab or tab == self.data_property_tab:
             self.form_window.geometry("500x400")
             label = ttk.Label(self.form_window, text="Property Name")
             label.place(relx=0.5, rely=0.1, anchor=CENTER)
             entry = ttk.Entry(self.form_window)
             entry.place(relx=0.5, rely=0.2, anchor=CENTER)
-            self.label_entry.append((label, entry))
+            self.label_entry.append(entry)
             label = ttk.Label(self.form_window, text="Domain Name 1")
             label.place(relx=0.5, rely=0.3, anchor=CENTER)
             entry = ttk.Entry(self.form_window)
             entry.place(relx=0.5, rely=0.4, anchor=CENTER)
-            self.label_entry.append((label, entry))
+            self.label_entry.append(entry)
             label = ttk.Label(self.form_window, text="Domain Name 2" if tab == self.object_property_tab else "Range")
             label.place(relx=0.5, rely=0.5, anchor=CENTER)
             entry = ttk.Entry(self.form_window)
             entry.place(relx=0.5, rely=0.6, anchor=CENTER)
-            self.label_entry.append((label, entry))
+            self.label_entry.append(entry)
         elif tab == self.subclass_tab:
             self.form_window.geometry("500x300")
             label = ttk.Label(self.form_window, text="Class Name")
             label.place(relx=0.5, rely=0.1, anchor=CENTER)
             entry = ttk.Entry(self.form_window)
             entry.place(relx=0.5, rely=0.25, anchor=CENTER)
-            self.label_entry.append((label, entry))
+            self.label_entry.append(entry)
             label = ttk.Label(self.form_window, text="Subclass Name")
             label.place(relx=0.5, rely=0.4, anchor=CENTER)
             entry = ttk.Entry(self.form_window)
             entry.place(relx=0.5, rely=0.55, anchor=CENTER)
-            self.label_entry.append((label, entry))
+            self.label_entry.append(entry)
 
         self.submit_button = ttk.Button(self.form_window, text="Submit", command=lambda: self.form_submit(tab))
         self.submit_button.place(relx=0.5, rely=0.8, anchor=CENTER)
 
     def form_submit(self, tab: ttk.Frame):
-        self.form_window.destroy()
         try:
             if tab == self.class_tab:
                 data = {
-                    'classname': self.label_entry[0][1].get()
+                    'classname': self.label_entry[0].get()
                 }
                 self.create(tab, data)
             elif tab == self.individual_tab:
                 data = {
-                    'instance_name': self.label_entry[1][1].get(),
-                    'instance_type': self.label_entry[0][1].get()
+                    'instance_name': self.label_entry[1].get(),
+                    'instance_type': self.label_entry[0].get()
                 }
                 self.create(tab, data)
             elif tab == self.object_property_tab:
                 data = {
-                    'object_property': self.label_entry[0][1].get(),
-                    'domain_1': self.label_entry[1][1].get(),
-                    'domain_2': self.label_entry[2][1].get()
+                    'object_property': self.label_entry[0].get(),
+                    'domain_1': self.label_entry[1].get(),
+                    'domain_2': self.label_entry[2].get()
                 }
                 self.create(tab, data)
             elif tab == self.data_property_tab:
                 data = {
-                    'data_property': self.label_entry[0][1].get(),
-                    'domain': self.label_entry[1][1].get(),
-                    'xs_range': self.label_entry[2][1].get()
+                    'data_property': self.label_entry[0].get(),
+                    'domain': self.label_entry[1].get(),
+                    'xs_range': self.label_entry[2].get()
                 }
                 self.create(tab, data)
             elif tab == self.subclass_tab:
                 data = {
-                    'classname': self.label_entry[1][1].get(),
-                    'parent': self.label_entry[0][1].get()
+                    'classname': self.label_entry[1].get(),
+                    'parent': self.label_entry[0].get()
                 }
                 self.create(tab, data)
         except TclError:
             messagebox.showwarning("Warning", "Check input args, maybe some of them are empty.")
+        finally:
+            self.form_window.destroy()
 
     def create_class(self, data: Dict[str, str]):
         if check_class_existing(data['classname']):
@@ -466,7 +482,7 @@ class OntotlogyEditor:
         for item in query_result:
             subject = item["subject"].split("/")[-1][:-1]
             item_dict = {
-                'class': subject,
+                'subject': subject,
             }
             relation = item["relation"].split("/")[-1][:-1]
             if len(item["object"].split("^^")) == 2:
@@ -475,38 +491,41 @@ class OntotlogyEditor:
                 except Exception:
                     object = item["object"].split("^^")[0]
                 item_dict.update({
-                    'data_property': relation,
-                    'value': object
+                    'relation': relation,
+                    'object': object
                 })
             else:
                 object = item["object"].split("/")[-1][:-1]
                 item_dict.update({
-                    'object_property': relation,
-                    'other_class': object
+                    'relation': relation,
+                    'object': object
                 })
             content.append(item_dict)
 
-        # individual_class = None
-
-        # for i in database.execute_get_query():
-        #     if i["subject"].split("/")[-1][:-1] == individual and \
-        #        not i["object"].split("/")[-1][:-1].startswith('owl') and \
-        #        i["relation"].split("#")[1][:-1] == 'type':
-        #         individual_class = i["object"].split("/")[-1][:-1]
-        #         break
-
-        # for i in content:
-        #     i['class'] = individual_class
+        individual_class = None
+        for i in database.execute_get_query():
+            try:
+                if i["subject"].split("/")[-1][:-1] == individual and \
+                   not i["object"].split("/")[-1][:-1].startswith('owl') and \
+                   i["relation"].split("#")[1][:-1] == 'type':
+                    individual_class = i["object"].split("/")[-1][:-1]
+                    break
+            except IndexError:
+                pass
+        content.append({
+            'subject': individual,
+            'relation': 'type',
+            'object': individual_class
+        })
 
         return self.handle_data_in_dict_output(content)
 
-    def find_individual(self):
-        self.search_label.pack_forget()
-        self.search_entry.pack_forget()
-        self.search_button.pack_forget()
+    def find_individual(self, individuals_name: List[str]):
         individual_window = tk.Toplevel(self.window)
         individual_window.title("Individual Info")
-        data = self.get_individual_info(self.search_entry.get())
+        data = []
+        for i in individuals_name:
+            data.extend(self.get_individual_info(i))
 
         sheet = Sheet(
             individual_window,
@@ -520,19 +539,13 @@ class OntotlogyEditor:
         sheet.readonly(span)
 
         sheet.enable_bindings()
-        sheet.edit_validation(self.validate_edits)
         sheet.headers(['Class', 'Property', 'Value'])
         sheet.grid(row=0, column=1, sticky="nswe")
 
-    def toggle_search_window(self):
-        if self.search_label.winfo_viewable():
-            self.search_label.pack_forget()
-            self.search_entry.pack_forget()
-            self.search_button.pack_forget()
-        else:
-            self.search_label.pack(side="left")
-            self.search_entry.pack(side="left")
-            self.search_button.pack(side="left")
+    def search_window(self, tab: Tab):
+        selected_cells = tab.sheet.get_selected_cells()
+        data: List[str] = [tab.sheet.get_cell_data(*i) for i in selected_cells]  # type: ignore
+        self.find_individual(data)
 
     def delete_all(self):
         database.delete_all()
@@ -579,7 +592,6 @@ class OntotlogyEditor:
         self.submit_button.place(relx=0.5, rely=0.85, anchor=CENTER)
 
     def connect_property(self, entries: List[ttk.Entry]):
-        self.connect_property_from_window.destroy()
         type_property = entries[0].get()
         subject = entries[1].get()
         property = entries[2].get()
@@ -613,6 +625,7 @@ class OntotlogyEditor:
                 f"<{subject}>", f"<{property}>", f'"{object_class}"^^{value_type}'
             ):
                 self.refresh_tables(self.tabs)
+        self.connect_property_from_window.destroy()
 
     def delete(self, tab: Tab):
         selected_cells = tab.sheet.get_selected_cells()
@@ -652,11 +665,11 @@ class OntotlogyEditor:
         self.submit_button.place(relx=0.5, rely=0.8, anchor=CENTER)
 
     def delete_individual_property(self, tab: ttk.Frame, entries: List[ttk.Entry]):
-        self.delete_form_window.destroy()
         if tab == self.data_property_tab:
             self.instance_delete_data_property(entries[0].get(), entries[1].get())
         else:
             self.instance_delete_object_property(entries[0].get(), entries[1].get())
+        self.delete_form_window.destroy()
 
     def instance_delete_data_property(self, data_property: str, individual_name: str, hide=False):
         all_info = get_full_info(individual_name, "owl:NamedIndividual")

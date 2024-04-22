@@ -27,9 +27,18 @@ def add_file_to_rep(filename: str):
 def handle_file(filename: str):
     with open(settings.OWL_FILES_STORAGE + filename, "r") as f:
         content = f.read()
-    exception_list = ['http://www.w3.org/2001/XMLSchema#', 'https://github.com/owlcs/owlapi', "http://www.w3.org/2002/07/owl#",
-                      "http://www.w3.org/1999/02/22-rdf-syntax-ns#", "http://www.w3.org/XML/1998/namespace", "http://www.w3.org/2000/01/rdf-schema#"]
-    url = re.findall(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+#?', content)
+    exception_list = [
+        "http://www.w3.org/2001/XMLSchema#",
+        "https://github.com/owlcs/owlapi",
+        "http://www.w3.org/2002/07/owl#",
+        "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        "http://www.w3.org/XML/1998/namespace",
+        "http://www.w3.org/2000/01/rdf-schema#",
+    ]
+    url = re.findall(
+        r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+#?",
+        content,
+    )
     url2 = set()
     for i in url:
         if i not in exception_list:
@@ -37,20 +46,24 @@ def handle_file(filename: str):
     url2 = sorted(list(url2), key=lambda x: len(x), reverse=True)
 
     for i in url2:
-        content = content.replace(i, f'http://127.0.0.1:10035/repositories/{settings.REPOSITORY_NAME}/')
+        content = content.replace(
+            i, f"http://127.0.0.1:10035/repositories/{settings.REPOSITORY_NAME}/"
+        )
     with open(settings.OWL_FILES_STORAGE + filename, "w") as f:
         f.write(content)
 
 
 def write_file(filename: str) -> bool:
-    if os.path.isfile(os.path.join(settings.OWL_FILES_STORAGE, filename.split('/')[-1])):
+    if os.path.isfile(
+        os.path.join(settings.OWL_FILES_STORAGE, filename.split("/")[-1])
+    ):
         return True
     if filename is None:
         return False
 
-    with open(filename, 'rb') as read_file:
+    with open(filename, "rb") as read_file:
         content = read_file.read()
-    filename = filename.split('/')[-1]
+    filename = filename.split("/")[-1]
 
     with open(settings.OWL_FILES_STORAGE + filename, "wb") as created_file:
         created_file.write(content)
@@ -63,14 +76,18 @@ def write_file(filename: str) -> bool:
 
 def execute_get_query(subject="?s", relation="?r", object="?o"):
     """select query for get endpoints"""
-    query_string = "SELECT distinct ?s ?r ?o WHERE {%s %s %s}" % (subject, relation, object)
+    query_string = "SELECT distinct ?s ?r ?o WHERE {%s %s %s}" % (
+        subject,
+        relation,
+        object,
+    )
     result_list = []
 
     with repository.getConnection() as connection:
         result = connection.executeTupleQuery(query=query_string)
 
-        with result:
-            for bindung_set in result:
+        with result:  # type: ignore
+            for bindung_set in result:  # type: ignore
                 result_list.append(
                     {
                         "subject": bindung_set.getValue("s").__str__(),
@@ -89,8 +106,8 @@ def get_objects(object):
     with repository.getConnection() as connection:
         result = connection.executeTupleQuery(query=query)
 
-    with result:
-        for bindung_set in result:
+    with result:  # type: ignore
+        for bindung_set in result:  # type: ignore
             result_list.append(
                 {
                     "subject": bindung_set.getValue("s").__str__(),
@@ -106,15 +123,19 @@ def execute_get_individuals_query(name=None, class_name=None):
     if name:
         query_string = """SELECT distinct ?s ?r ?o WHERE {?s ?r ?o . ?s a owl:NamedIndividual FILTER(?r != rdf:type)}"""
     elif class_name:
-        query_string = """SELECT distinct ?s ?r ?o WHERE {?s ?r ?o . ?s a owl:NamedIndividual}"""
+        query_string = (
+            """SELECT distinct ?s ?r ?o WHERE {?s ?r ?o . ?s a owl:NamedIndividual}"""
+        )
     else:
-        query_string = """SELECT distinct ?s WHERE {?s ?r ?o . ?s a owl:NamedIndividual}"""
+        query_string = (
+            """SELECT distinct ?s WHERE {?s ?r ?o . ?s a owl:NamedIndividual}"""
+        )
     result_list = []
 
     with repository.getConnection() as connection:
         result = connection.executeTupleQuery(query=query_string)
-        with result:
-            for bindung_set in result:
+        with result:  # type: ignore
+            for bindung_set in result:  # type: ignore
                 if name or class_name:
                     request = {
                         "subject": bindung_set.getValue("s").__str__(),
@@ -132,7 +153,10 @@ def execute_get_individuals_query(name=None, class_name=None):
         result_list = result
     elif class_name:
         for i in result_list:
-            if i["object"].split("/")[-1][:-1] == class_name and i["relation"].split("#")[1][:-1] == 'type':
+            if (
+                i["object"].split("/")[-1][:-1] == class_name
+                and i["relation"].split("#")[1][:-1] == "type"
+            ):
                 result.append(i)
         result_list = result
     return result_list
@@ -159,6 +183,64 @@ def delete_all():
         file_path = os.path.join(settings.OWL_FILES_STORAGE, i)
         if os.path.isfile(file_path):
             os.remove(file_path)
+
+    with repository.getConnection() as connection:
+        return connection.executeUpdate(query=string_query)
+
+
+def rename_subject_object(old_name: str, new_name: str):
+    string_query = """
+        DELETE {{
+          <{0}> ?p ?o .
+        }}
+        INSERT {{
+          <{1}> ?p ?o .
+        }}
+        WHERE {{
+          <{0}> ?p ?o .
+        }};
+
+        DELETE {{
+          ?s ?p <{0}> .
+        }}
+        INSERT {{
+          ?s ?p <{1}> .
+        }}
+        WHERE {{
+          ?s ?p <{0}> .
+        }};
+    """.format(
+        old_name, new_name
+    )
+
+    with repository.getConnection() as connection:
+        return connection.executeUpdate(query=string_query)
+
+
+def rename_relation(old_name: str, new_name: str):
+    string_query = """
+        DELETE {{
+          <{0}> ?p ?o .
+        }}
+        INSERT {{
+          <{1}> ?p ?o .
+        }}
+        WHERE {{
+          <{0}> ?p ?o .
+        }};
+
+        DELETE {{
+          ?s <{0}> ?o .
+        }}
+        INSERT {{
+          ?s <{1}> ?o .
+        }}
+        WHERE {{
+          ?s <{0}> ?o .
+        }};
+    """.format(
+        old_name, new_name
+    )
 
     with repository.getConnection() as connection:
         return connection.executeUpdate(query=string_query)
