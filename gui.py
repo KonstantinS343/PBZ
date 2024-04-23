@@ -161,6 +161,8 @@ class OntotlogyEditor:
 
     def refresh_tables(self, tabs: List[Tab]):
         for i in tabs:
+            if i.tab == self.query:
+                continue
             data = self.update_data(i.tab)
             if not data:
                 data = ''
@@ -169,7 +171,7 @@ class OntotlogyEditor:
                 data=data,
                 height=700,
                 width=1020,
-                default_column_width=300,
+                default_column_width=300
                 )
             sheet.enable_bindings()
             sheet.extra_bindings("begin_edit_cell", self.begin_edit_cell)
@@ -187,12 +189,14 @@ class OntotlogyEditor:
         self.object_property_tab = ttk.Frame(self.notebook)
         self.data_property_tab = ttk.Frame(self.notebook)
         self.subclass_tab = ttk.Frame(self.notebook)
+        self.query = ttk.Frame(self.notebook)
 
         self.notebook.add(self.class_tab, text="Classes")
         self.notebook.add(self.individual_tab, text="Individuals")
         self.notebook.add(self.object_property_tab, text="Object properties")
         self.notebook.add(self.data_property_tab, text="Data properties")
         self.notebook.add(self.subclass_tab, text="Subclasses")
+        self.notebook.add(self.query, text="Query")
 
         self.notebook.pack(expand=1, fill="both")
 
@@ -206,6 +210,7 @@ class OntotlogyEditor:
             self.object_property_tab: ['Property', 'Domain', 'Range'],
             self.data_property_tab: ['Property', 'Domain', 'Range'],
             self.subclass_tab: ['Parent', 'Child'],
+            self.query: ['Subject', 'Relation', 'Object']
         }
         for i in self.just_tabs.keys():
             data = self.update_data(i)
@@ -214,23 +219,78 @@ class OntotlogyEditor:
             sheet = Sheet(
                 i,
                 data=data,
-                height=700,
-                width=1020,
-                default_column_width=300
+                height=700 if i != self.query else 500,
+                width=1020 if i != self.query else 1080,
+                default_column_width=300 if i != self.query else 360
             )
 
             sheet.enable_bindings()
             sheet.extra_bindings("begin_edit_cell", self.begin_edit_cell)
-            if i == self.subclass_tab:
+            if i == self.subclass_tab or i == self.query:
                 span = sheet.span(key=self.just_tabs[i], header=True)
                 sheet.readonly(span)
             sheet.edit_validation(self.validate_edits)
             sheet.headers(self.just_tabs[i])
-            sheet.grid(row=0, column=1, sticky="nswe")
+            if i == self.query:
+                sheet.grid(row=1, column=0, sticky="nswe")
+            else:
+                sheet.grid(row=0, column=1, sticky="nswe")
 
             self.tabs.append(Tab(tab=i, sheet=sheet, tab_name=self.just_tabs[i]))
+            if i == self.query:
+                self.setup_query(self.tabs[-1])
+            else:
+                self._setup_tools(self.tabs[-1])
 
-            self._setup_tools(self.tabs[-1])
+    def setup_query(self, tab: Tab):
+        tool_frame = ttk.LabelFrame(tab.tab, text="Query")
+        tool_frame.grid(row=0, column=0, sticky="nswe")
+
+        query_text = tk.Text(tool_frame, width=133, height=8)
+        query_text.grid(row=1, padx=5, pady=5, sticky="ew")
+
+        create_button = ttk.Button(tool_frame, text="Execute", command=lambda: self.execute_query(query_text))
+        create_button.grid(row=2, padx=5, pady=5, sticky="ew")
+
+    def execute_query(self, query: tk.Text):
+        query_text = query.get("1.0", tk.END)
+        data = database.execute_raw_query(query_text)
+        if isinstance(data, bool):
+            self.refresh_tables(self.tabs)
+            return
+        elif isinstance(data, str):
+            messagebox.showwarning("Warning", data)
+            return
+        data_list = []
+        for i in data:  # type: ignore
+            values = list(i.values())
+            subject = values[0].uri.split("/")[-1]
+            if not subject:
+                subject = values[0].uri.split("/")[-2]
+            try:
+                relation = values[1].uri.split("#")[1]
+            except Exception:
+                relation = values[1].uri.split("/")[-1]
+            try:
+                object = values[2].uri.split("#")[1]
+            except AttributeError:
+                object = values[2].label
+            except Exception:
+                object = values[2].uri.split("/")[-1]
+            data_list.append([subject, relation, object])
+        sheet = Sheet(
+            self.query,
+            data=data_list,
+            height=500,
+            width=1080,
+            default_column_width=360
+            )
+        sheet.enable_bindings()
+        span = sheet.span(key=self.just_tabs[self.query], header=True)
+        sheet.readonly(span)
+        sheet.grid(row=1, column=0, sticky="nswe")
+        sheet.headers(self.just_tabs[self.query])
+        self.update_tab_sheet(self.query, sheet)
 
     def begin_edit_cell(self, event=None):
         self.old_cell_value = event.value  # type: ignore

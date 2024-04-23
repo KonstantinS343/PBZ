@@ -274,3 +274,24 @@ def rename_relation(old_name: str, new_name: str):
 
     with repository.getConnection() as connection:
         return connection.executeUpdate(query=string_query)
+
+
+def execute_raw_query(query: str):
+    query_result = []
+    with repository.getConnection() as connection:
+        try:
+            result = connection.executeTupleQuery(query=query)
+            with result:  # type: ignore
+                for binding_set in result:  # type: ignore
+                    row_data = {}
+                    for variable_name in binding_set.getBindingNames():
+                        value = binding_set.getValue(variable_name)
+                        row_data[variable_name] = value
+                    query_result.append(row_data)
+        except Exception as e:
+            if e.message == 'SPARQL/Update queries can only be performed through POST requests.':
+                query_result = connection.executeUpdate(query=query)
+                return query_result
+            else:
+                return e.message
+    return query_result
