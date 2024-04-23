@@ -25,7 +25,7 @@ def validate_input(args: Dict[str, str]):
         for i in objects:
             if i['subject'].split('/')[-1][:-1] == name:
                 output[type_class] = True
-    return (True if all(output.values()) else False, output)
+    return output
 
 
 def get_full_info(name: str, type: str):

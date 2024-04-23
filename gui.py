@@ -11,7 +11,7 @@ from dataclasses import dataclass
 import database
 from database import write_file
 from services import validate_input, check_class_existing, get_full_info
-from template import object_property_template, class_template, data_property_template, instance_template
+from template import data_property_template
 
 
 @dataclass(slots=True)
@@ -379,7 +379,10 @@ class OntotlogyEditor:
             self.form_window.destroy()
 
     def create_class(self, data: Dict[str, str]):
-        if check_class_existing(data['classname']):
+        validation = validate_input({
+            'Class': data['classname'],
+        })
+        if validation:
             return
         if database.execute_post_query(f"<{data['classname']}>", "rdf:type", "owl:Class"):
             self.refresh_tables(self.tabs)
@@ -387,12 +390,10 @@ class OntotlogyEditor:
     def create_individual(self, data: Dict[str, str]):
         validation = validate_input({
             'NamedIndividual': data['instance_name'],
+            'Class': data['instance_type']
         })
-        if validation[1]['NamedIndividual']:
+        if validation['NamedIndividual'] or not validation['Class']:
             messagebox.showwarning("Warning", "Check input args.")
-            return
-        if not check_class_existing(data['instance_type']):
-            messagebox.showwarning("Warning", "Such class doesn't exist.")
             return
         if database.execute_post_query(
             f"<{data['instance_name']}>", "rdf:type", "owl:NamedIndividual"
@@ -406,13 +407,10 @@ class OntotlogyEditor:
         validation = validate_input({
             'ObjectProperty': data['object_property'],
         })
-        if validation[1]['ObjectProperty']:
+        if validation['ObjectProperty']:
             messagebox.showwarning("Warning", "Check input args.")
             return
-        if not check_class_existing(data['domain_1']):
-            messagebox.showwarning("Warning", "Such class doesn't exist.")
-            return
-        if not check_class_existing(data['domain_2']):
+        if not check_class_existing(data['domain_1']) or not check_class_existing(data['domain_2']):
             messagebox.showwarning("Warning", "Such class doesn't exist.")
             return
         if (
@@ -437,10 +435,10 @@ class OntotlogyEditor:
             'DatatypeProperty': data['data_property'],
             'Class': data['domain']
         })
-        if not validation[1]['Class']:
+        if not validation['Class']:
             messagebox.showwarning("Warning", "Check input args.")
             return
-        if validation[1]['DatatypeProperty']:
+        if validation['DatatypeProperty']:
             messagebox.showwarning("Warning", "Check input args.")
             return
         if (
@@ -475,7 +473,7 @@ class OntotlogyEditor:
         validation = validate_input({
             'NamedIndividual': individual,
         })
-        if not validation[0]:
+        if not validation['NamedIndividual']:
             return content
 
         query_result = database.execute_get_individuals_query(name=individual)
@@ -606,25 +604,25 @@ class OntotlogyEditor:
             'NamedIndividual': subject,
             type_property: property
         })
-        if not validation[0]:
+        if not validation['NamedIndividual'] or not validation[type_property]:
             messagebox.showwarning("Warning", "Check input args.")
             return
         if type_property == 'ObjectProperty':
             validation = validate_input({
                 'NamedIndividual': object_class
             })
-            if not validation[0]:
+            if not validation['NamedIndividual']:
                 messagebox.showwarning("Warning", "Check input args.")
                 return
-            if database.execute_post_query(
+            database.execute_post_query(
                 f"<{subject}>", f"<{property}>", f"<{object_class}>"
-            ):
-                self.refresh_tables(self.tabs)
+            )
         elif type_property == 'DatatypeProperty':
-            if database.execute_post_query(
+            database.execute_post_query(
                 f"<{subject}>", f"<{property}>", f'"{object_class}"^^{value_type}'
-            ):
-                self.refresh_tables(self.tabs)
+            )
+
+        self.refresh_tables(self.tabs)
         self.connect_property_from_window.destroy()
 
     def delete(self, tab: Tab):
@@ -679,7 +677,7 @@ class OntotlogyEditor:
         validation = validate_input({
             'DatatypeProperty': data_property,
         })
-        if not validation[0]:
+        if not validation['DatatypeProperty']:
             messagebox.showwarning("Warning", "Check input args.")
             return
         for i in all_info:
@@ -700,7 +698,7 @@ class OntotlogyEditor:
         validation = validate_input({
             'ObjectProperty': object_property,
         })
-        if not validation[0]:
+        if not validation['ObjectProperty']:
             messagebox.showwarning("Warning", "Check input args.")
             return
         for i in all_info:
@@ -726,26 +724,7 @@ class OntotlogyEditor:
             self.delete_instance(i, hide=True)
             self.delete_data_property(i, hide=True)
             self.delete_object_property(i, hide=True)
-        for i in database.execute_get_query():
-            if i["object"].split("/")[-1][:-1] == subject_class:
-                database.execute_delete_query(
-                    f'<{i["subject"].split("/")[-1][:-1]}>',
-                    class_template[f'{i["relation"].split("#")[1][:-1]}'],
-                    f'<{i["object"].split("/")[-1][:-1]}>',
-                )
-        for i in all_info:
-            if i["relation"].split("#")[1][:-1] == "type":
-                database.execute_delete_query(
-                    f'<{i["subject"].split("/")[-1][:-1]}>',
-                    class_template[f'{i["relation"].split("#")[1][:-1]}'],
-                    class_template[f'{i["object"].split("#")[1][:-1]}'],
-                )
-            else:
-                database.execute_delete_query(
-                    f'<{i["subject"].split("/")[-1][:-1]}>',
-                    class_template[f'{i["relation"].split("#")[1][:-1]}'],
-                    f'<{i["object"].split("/")[-1][:-1]}>',
-                )
+        database.delete_class_or_individual(subject_class)
 
         self.refresh_tables(self.tabs)
 
@@ -755,48 +734,7 @@ class OntotlogyEditor:
             if not hide:
                 messagebox.showwarning("Warning", "Such instance doesn't exist.")
             return
-        individuals = set()
-        for i in database.execute_get_query():
-            if i["object"].split("/")[-1][:-1] == instance_name:
-                individuals.add((i["subject"].split("/")[-1][:-1], i["relation"].split("/")[-1][:-1]))
-        for i in individuals:
-            self.instance_delete_object_property(i[1], i[0], hide=True)
-
-        for i in all_info:
-            object = None
-            relation = None
-            try:
-                relation = i["relation"].split("#")[1][:-1]
-            except Exception:
-                pass
-            try:
-                object = i["object"].split("#")[1][:-1]
-            except Exception:
-                pass
-            if relation and object:
-                database.execute_delete_query(
-                    f'<{i["subject"].split("/")[-1][:-1]}>',
-                    instance_template[f'{i["relation"].split("#")[1][:-1]}'],
-                    instance_template[f'{i["object"].split("#")[1][:-1]}'],
-                )
-            elif not object and relation:
-                database.execute_delete_query(
-                    f'<{i["subject"].split("/")[-1][:-1]}>',
-                    instance_template[f'{i["relation"].split("#")[1][:-1]}'],
-                    f'<{i["object"].split("/")[-1][:-1]}>',
-                )
-            elif not relation and object:
-                database.execute_delete_query(
-                    f'<{i["subject"].split("/")[-1][:-1]}>',
-                    f'<{i["relation"].split("/")[-1][:-1]}>',
-                    f'"{i["object"].split("^^")[0][1:-1]}"^^{data_property_template[i["object"].split("#")[-1][:-1]]}',
-                )
-            else:
-                database.execute_delete_query(
-                    f'<{i["subject"].split("/")[-1][:-1]}>',
-                    f'<{i["relation"].split("/")[-1][:-1]}>',
-                    f'<{i["object"].split("/")[-1][:-1]}>',
-                )
+        database.delete_class_or_individual(instance_name)
         if not hide:
             self.refresh_tables(self.tabs)
 
@@ -806,27 +744,7 @@ class OntotlogyEditor:
             if not hide:
                 messagebox.showwarning("Warning", "Such property doesn't exist.")
             return
-        individuals = set()
-        for i in database.execute_get_query():
-            if i["relation"].split("/")[-1][:-1] == object_property:
-                individuals.add(i["subject"].split("/")[-1][:-1])
-                individuals.add(i["object"].split("/")[-1][:-1])
-        for i in individuals:
-            self.instance_delete_object_property(object_property, i, hide=True)
-
-        for i in all_info:
-            if i["relation"].split("#")[1][:-1] == "type":
-                database.execute_delete_query(
-                    f'<{i["subject"].split("/")[-1][:-1]}>',
-                    object_property_template[f'{i["relation"].split("#")[1][:-1]}'],
-                    object_property_template[f'{i["object"].split("#")[1][:-1]}'],
-                )
-            else:
-                database.execute_delete_query(
-                    f'<{i["subject"].split("/")[-1][:-1]}>',
-                    object_property_template[f'{i["relation"].split("#")[1][:-1]}'],
-                    f'<{i["object"].split("/")[-1][:-1]}>',
-                )
+        database.delete_property(object_property)
         if not hide:
             self.refresh_tables(self.tabs)
 
@@ -836,28 +754,7 @@ class OntotlogyEditor:
             if not hide:
                 messagebox.showwarning("Warning", "Such property doesn't exist.")
             return
-        individuals = set()
-        for i in database.execute_get_query():
-            if i["relation"].split("/")[-1][:-1] == data_property:
-                individuals.add(i["subject"].split("/")[-1][:-1])
-        for i in individuals:
-            self.instance_delete_data_property(data_property, i, hide=True)
-        for i in all_info:
-            if (
-                i["relation"].split("#")[1][:-1] == "type"
-                or i["relation"].split("#")[1][:-1] == "range"
-            ):
-                database.execute_delete_query(
-                    f'<{i["subject"].split("/")[-1][:-1]}>',
-                    data_property_template[f'{i["relation"].split("#")[1][:-1]}'],
-                    data_property_template[f'{i["object"].split("#")[1][:-1]}'],
-                )
-            else:
-                database.execute_delete_query(
-                    f'<{i["subject"].split("/")[-1][:-1]}>',
-                    data_property_template[f'{i["relation"].split("#")[1][:-1]}'],
-                    f'<{i["object"].split("/")[-1][:-1]}>',
-                )
+        database.delete_property(data_property)
         if not hide:
             self.refresh_tables(self.tabs)
 

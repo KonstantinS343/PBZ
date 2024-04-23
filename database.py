@@ -74,7 +74,7 @@ def write_file(filename: str) -> bool:
     return True
 
 
-def execute_get_query(subject="?s", relation="?r", object="?o"):
+def execute_get_query(subject: str="?s", relation: str="?r", object: str="?o"):
     """select query for get endpoints"""
     query_string = "SELECT distinct ?s ?r ?o WHERE {%s %s %s}" % (
         subject,
@@ -99,7 +99,7 @@ def execute_get_query(subject="?s", relation="?r", object="?o"):
     return result_list
 
 
-def get_objects(object):
+def get_objects(object: str):
     query = "SELECT distinct ?s ?r ?o WHERE {?s ?r ?o . ?s a %s}" % (object)
     result_list = []
 
@@ -162,14 +162,14 @@ def execute_get_individuals_query(name=None, class_name=None):
     return result_list
 
 
-def execute_post_query(subject, relation, object):
+def execute_post_query(subject: str, relation: str, object: str):
     string_query = "INSERT DATA { %s %s %s}" % (subject, relation, object)
 
     with repository.getConnection() as connection:
         return connection.executeUpdate(query=string_query)
 
 
-def execute_delete_query(subject, predicate, object):
+def execute_delete_query(subject: str, predicate: str, object: str):
     string_query = "DELETE DATA { %s %s %s }" % (subject, predicate, object)
 
     with repository.getConnection() as connection:
@@ -183,6 +183,36 @@ def delete_all():
         file_path = os.path.join(settings.OWL_FILES_STORAGE, i)
         if os.path.isfile(file_path):
             os.remove(file_path)
+
+    with repository.getConnection() as connection:
+        return connection.executeUpdate(query=string_query)
+
+
+def delete_class_or_individual(name: str):
+    string_query = """
+        DELETE WHERE{{
+          <{0}> ?p ?o .
+        }};
+
+        DELETE WHERE{{
+          ?s ?p <{0}> .
+        }};
+    """.format(name)
+
+    with repository.getConnection() as connection:
+        return connection.executeUpdate(query=string_query)
+
+
+def delete_property(property_name: str):
+    string_query = """
+        DELETE WHERE{{
+          <{0}> ?p ?o .
+        }};
+
+        DELETE WHERE{{
+          ?s <{0}> ?o .
+        }};
+    """.format(property_name)
 
     with repository.getConnection() as connection:
         return connection.executeUpdate(query=string_query)
