@@ -7,6 +7,7 @@ from tkinter import messagebox
 
 from typing import List, Dict, Any, Set
 from dataclasses import dataclass
+import re
 
 import database
 from database import write_file
@@ -252,8 +253,15 @@ class OntotlogyEditor:
         create_button = ttk.Button(tool_frame, text="Execute", command=lambda: self.execute_query(query_text))
         create_button.grid(row=2, padx=5, pady=5, sticky="ew")
 
+    def parse_query(self, query: str) -> List[str]:
+        pattern = re.compile(r'\?(\w+)\b')
+        variables = pattern.findall(query)
+
+        return list(dict.fromkeys(variables))
+
     def execute_query(self, query: tk.Text):
         query_text = query.get("1.0", tk.END)
+        variables = self.parse_query(query=query_text)
         data = database.execute_raw_query(query_text)
         if isinstance(data, bool):
             self.refresh_tables(self.tabs)
@@ -264,20 +272,17 @@ class OntotlogyEditor:
         data_list = []
         for i in data:  # type: ignore
             values = list(i.values())
-            subject = values[0].uri.split("/")[-1]
-            if not subject:
-                subject = values[0].uri.split("/")[-2]
-            try:
-                relation = values[1].uri.split("#")[1]
-            except Exception:
-                relation = values[1].uri.split("/")[-1]
-            try:
-                object = values[2].uri.split("#")[1]
-            except AttributeError:
-                object = values[2].label
-            except Exception:
-                object = values[2].uri.split("/")[-1]
-            data_list.append([subject, relation, object])
+            data_list.append([])
+            for j in values:
+                try:
+                    item = j.uri.split("#")[1]
+                except AttributeError:
+                    item = j.label
+                except Exception:
+                    item = j.uri.split("/")[-1]
+                if not item:
+                    item = j.uri.split("/")[-2]
+                data_list[-1].append(item)
         sheet = Sheet(
             self.query,
             data=data_list,
@@ -289,7 +294,7 @@ class OntotlogyEditor:
         span = sheet.span(key=self.just_tabs[self.query], header=True)
         sheet.readonly(span)
         sheet.grid(row=1, column=0, sticky="nswe")
-        sheet.headers(self.just_tabs[self.query])
+        sheet.headers(variables)
         self.update_tab_sheet(self.query, sheet)
 
     def begin_edit_cell(self, event=None):

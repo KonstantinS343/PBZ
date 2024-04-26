@@ -228,7 +228,7 @@
     <owl:NamedIndividual rdf:about="http://127.0.0.1:10035/repositories/PBZ/Аристарх">
         <rdf:type rdf:resource="http://127.0.0.1:10035/repositories/PBZ/Диплодок"/>
         <untitled-ontology-2:вес rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">12.6</untitled-ontology-2:вес>
-        <untitled-ontology-2:вес rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">14.2</untitled-ontology-2:вес>
+        <untitled-ontology-2:возраст rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">5</untitled-ontology-2:возраст>
         <untitled-ontology-2:высота rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">6.2</untitled-ontology-2:высота>
     </owl:NamedIndividual>
     
