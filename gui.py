@@ -337,7 +337,6 @@ class OntotlogyEditor:
             individual_info.grid(row=5, padx=5, pady=5, sticky="ew")
 
     def create(self, tab: ttk.Frame, data: Dict[str, str]):
-        print(data)
         if tab == self.class_tab:
             self.create_class(data)
         elif tab == self.individual_tab:
@@ -447,10 +446,10 @@ class OntotlogyEditor:
         validation = validate_input({
             'Class': data['classname'],
         })
-        if validation:
+        if validation['Class']:
             return
-        if database.execute_post_query(f"<{data['classname']}>", "rdf:type", "owl:Class"):
-            self.refresh_tables(self.tabs)
+        database.execute_post_query(f"<{data['classname']}>", "rdf:type", "owl:Class")
+        self.refresh_tables(self.tabs)
 
     def create_individual(self, data: Dict[str, str]):
         validation = validate_input({
@@ -669,7 +668,11 @@ class OntotlogyEditor:
             'NamedIndividual': subject,
             type_property: property
         })
-        if not validation['NamedIndividual'] or not validation[type_property]:
+        try:
+            if not validation['NamedIndividual'] or not validation[type_property]:
+                messagebox.showwarning("Warning", "Check input args.")
+                return
+        except KeyError:
             messagebox.showwarning("Warning", "Check input args.")
             return
         if type_property == 'ObjectProperty':
